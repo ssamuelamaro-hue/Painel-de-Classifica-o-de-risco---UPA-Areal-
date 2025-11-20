@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { TrendingUp, LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet } from 'lucide-react';
+import { TrendingUp, LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface TriageDashboardProps {
@@ -41,11 +41,13 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   // State for Modals
   const [isAuthModalOpen, setIsAuthModalOpen] = useState(false);
   const [isEntryModalOpen, setIsEntryModalOpen] = useState(false);
+  const [isShareModalOpen, setIsShareModalOpen] = useState(false);
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState(false);
+  const [copied, setCopied] = useState(false);
 
-  // State for Authentication Context ('add' or 'delete')
-  const [authMode, setAuthMode] = useState<'add' | 'delete' | null>(null);
+  // State for Authentication Context ('add', 'delete', or 'share')
+  const [authMode, setAuthMode] = useState<'add' | 'delete' | 'share' | null>(null);
   const [itemToDelete, setItemToDelete] = useState<string | null>(null);
 
   // State for New Entry Form
@@ -89,6 +91,14 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     setPasswordInput('');
   };
 
+  const openAuthForShare = () => {
+    setAuthMode('share');
+    setItemToDelete(null);
+    setIsAuthModalOpen(true);
+    setAuthError(false);
+    setPasswordInput('');
+  };
+
   const handleAuthSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (passwordInput === 'Conselho@2026') {
@@ -96,9 +106,11 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         setIsEntryModalOpen(true);
       } else if (authMode === 'delete' && itemToDelete) {
         onDeleteData(itemToDelete);
+      } else if (authMode === 'share') {
+        setIsShareModalOpen(true);
       }
       
-      // Reset and close auth
+      // Reset and close auth (except for share/entry modals which open next)
       setIsAuthModalOpen(false);
       setPasswordInput('');
       setAuthError(false);
@@ -166,6 +178,12 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
 
     // Trigger Download
     XLSX.writeFile(wb, "relatorio_triagem_master.xlsx");
+  };
+
+  const handleCopyLink = () => {
+    navigator.clipboard.writeText(window.location.href);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
   };
 
   return (
@@ -296,16 +314,26 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
 
       {/* Data Table & Actions */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
-        <div className="flex justify-between items-center mb-6">
+        <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 sm:gap-0">
           <h2 className="text-lg font-bold text-slate-800">Dados Detalhados</h2>
-          <div className="flex gap-2">
-            <button 
-              onClick={openAuthForAdd}
-              className="flex items-center gap-2 text-xs font-semibold text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
-            >
-              <Lock className="w-3 h-3" />
-              <span className="hidden sm:inline">Área Administrativa:</span> Inserir Dados
-            </button>
+          <div className="flex gap-2 flex-wrap justify-center">
+             <div className="flex gap-2">
+              <button 
+                onClick={openAuthForAdd}
+                className="flex items-center gap-2 text-xs font-semibold text-white bg-blue-600 px-4 py-2 rounded-lg hover:bg-blue-700 transition-colors shadow-sm"
+              >
+                <Lock className="w-3 h-3" />
+                <span className="hidden sm:inline">Área Administrativa:</span> Inserir Dados
+              </button>
+              <button 
+                onClick={openAuthForShare}
+                className="flex items-center gap-2 text-xs font-semibold text-blue-600 bg-blue-50 px-3 py-2 rounded-lg hover:bg-blue-100 border border-blue-200 transition-colors"
+                title="Compartilhar Link (Área Restrita)"
+              >
+                <Share2 className="w-3 h-3" />
+                <span className="hidden sm:inline">Compartilhar Link</span>
+              </button>
+             </div>
             <button 
               onClick={handleExportExcel}
               className="flex items-center gap-2 text-xs font-semibold text-green-700 bg-green-50 px-3 py-2 rounded-lg hover:bg-green-100 border border-green-200 transition-colors"
@@ -487,6 +515,47 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               </button>
             </form>
           </div>
+        </div>
+      )}
+
+      {/* Share Modal */}
+      {isShareModalOpen && (
+        <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
+           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl">
+            <div className="flex justify-between items-center mb-4">
+              <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
+                <Share2 className="w-5 h-5 text-blue-600" /> Compartilhar Acesso
+              </h3>
+              <button onClick={() => setIsShareModalOpen(false)} className="text-slate-400 hover:text-slate-600">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+            <div className="space-y-4">
+              <p className="text-sm text-slate-600">
+                Copie o link abaixo para compartilhar o painel com outros usuários autorizados.
+              </p>
+              
+              <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
+                <input 
+                  type="text" 
+                  readOnly 
+                  value={window.location.href}
+                  className="bg-transparent text-sm text-slate-600 flex-1 outline-none truncate"
+                />
+                <button 
+                  onClick={handleCopyLink}
+                  className={`p-2 rounded-md transition-colors ${copied ? 'bg-green-100 text-green-700' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-100'}`}
+                >
+                  {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+                </button>
+              </div>
+              {copied && <p className="text-xs text-green-600 text-center font-medium">Link copiado para a área de transferência!</p>}
+              
+              <button onClick={() => setIsShareModalOpen(false)} className="w-full bg-slate-100 text-slate-700 py-2 rounded-lg font-medium hover:bg-slate-200 transition-colors text-sm">
+                Fechar
+              </button>
+            </div>
+           </div>
         </div>
       )}
     </div>
