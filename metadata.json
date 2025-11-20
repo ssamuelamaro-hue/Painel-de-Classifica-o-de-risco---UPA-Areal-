@@ -1,0 +1,5 @@
+{
+  "name": "Painel classificação de risco - UPA Areal ",
+  "description": "Painel inteligente de classificação de risco hospitalar com integração Gemini para análise, geração de imagens e insights avançados.",
+  "requestFramePermissions": []
+}
