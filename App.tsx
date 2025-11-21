@@ -50,7 +50,7 @@ const App: React.FC = () => {
             <div className="bg-blue-600 p-2 rounded-lg">
               <Activity className="w-5 h-5 text-white" />
             </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">TriageMaster <span className="text-blue-600">AI</span></h1>
+            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Acolhimento com Classificação de Risco</h1>
           </div>
           <div className="hidden md:flex items-center gap-4 text-sm text-slate-500 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
              <Sparkles className="w-4 h-4 text-yellow-500" />
