@@ -45,6 +45,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   const [passwordInput, setPasswordInput] = useState('');
   const [authError, setAuthError] = useState(false);
   const [copied, setCopied] = useState(false);
+  const [saveSuccess, setSaveSuccess] = useState(false);
 
   // State for Authentication Context ('add', 'delete', or 'share')
   const [authMode, setAuthMode] = useState<'add' | 'delete' | 'share' | null>(null);
@@ -142,8 +143,12 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     };
 
     onAddData(newData);
-    setIsEntryModalOpen(false);
-    // Reset form
+    
+    // Show success feedback and keep modal open
+    setSaveSuccess(true);
+    setTimeout(() => setSaveSuccess(false), 3000);
+    
+    // Reset form counts but allow continued entry
     setNewEntry({
       dia: new Date().toISOString().split('T')[0],
       vermelho: 0,
@@ -509,6 +514,12 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                   {Number(newEntry.vermelho) + Number(newEntry.laranja) + Number(newEntry.amarelo) + Number(newEntry.verde) + Number(newEntry.azul)}
                 </span>
               </div>
+              
+              {saveSuccess && (
+                <div className="bg-green-100 text-green-800 p-3 rounded-lg flex items-center gap-2 text-sm animate-pulse">
+                  <Check className="w-4 h-4" /> Registro salvo com sucesso! Você pode inserir o próximo.
+                </div>
+              )}
 
               <button type="submit" className="w-full bg-blue-600 text-white py-3 rounded-xl font-bold hover:bg-blue-700 transition-all shadow-lg shadow-blue-200 flex items-center justify-center gap-2">
                 <Save className="w-5 h-5" /> Salvar Dados
