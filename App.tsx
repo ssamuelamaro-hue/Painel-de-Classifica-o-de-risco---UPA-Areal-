@@ -13,6 +13,20 @@ const initialData: TriageData[] = [
   { id: '5', dia: '2023-10-05', vermelho: 2, laranja: 7, amarelo: 16, verde: 28, azul: 9, total: 62 },
 ];
 
+// Robust Base64 encoding/decoding for UTF-8 (handling accents)
+const encodeData = (data: any) => {
+  const json = JSON.stringify(data);
+  return btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,
+      (match, p1) => String.fromCharCode(Number('0x' + p1))
+  ));
+};
+
+const decodeData = (str: string) => {
+  return JSON.parse(decodeURIComponent(atob(str).split('').map(function(c) {
+      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+  }).join('')));
+};
+
 const App: React.FC = () => {
   // Initialize data: Check URL for shared data first, otherwise use initialData
   const [data, setData] = useState<TriageData[]>(() => {
@@ -21,12 +35,18 @@ const App: React.FC = () => {
       const sharedData = params.get('data');
       if (sharedData) {
         try {
-          const parsedData = JSON.parse(atob(sharedData));
+          const parsedData = decodeData(sharedData);
           if (Array.isArray(parsedData)) {
             return parsedData;
           }
         } catch (e) {
-          console.error("Erro ao carregar dados compartilhados:", e);
+          console.error("Erro ao carregar dados compartilhados (tentando fallback simples):", e);
+          // Fallback for simple base64 (backward compatibility)
+          try {
+            return JSON.parse(atob(sharedData));
+          } catch (e2) {
+             console.error("Falha total na decodificação", e2);
+          }
         }
       }
     }
@@ -34,6 +54,20 @@ const App: React.FC = () => {
   });
 
   const [insight, setInsight] = useState<string>("Carregando análise rápida...");
+
+  // Sync URL with data changes
+  useEffect(() => {
+    try {
+      if (data) {
+        const encoded = encodeData(data);
+        const url = new URL(window.location.href);
+        url.searchParams.set('data', encoded);
+        window.history.replaceState(null, '', url.toString());
+      }
+    } catch (e) {
+      console.error("Erro ao atualizar URL:", e);
+    }
+  }, [data]);
 
   // Fast Insight Logic
   useEffect(() => {
@@ -44,7 +78,6 @@ const App: React.FC = () => {
       setInsight(result);
     };
     fetchInsight();
-    // Debounce slightly or just run on data change
   }, [data]);
 
   const handleAddData = (newData: TriageData) => {

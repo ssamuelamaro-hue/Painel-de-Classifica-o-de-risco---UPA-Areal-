@@ -191,8 +191,11 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
 
   const getShareableLink = () => {
     try {
-      const jsonData = JSON.stringify(data);
-      const encodedData = btoa(jsonData);
+      // Encode with same logic as App.tsx to ensure consistency
+      const json = JSON.stringify(data);
+      const encodedData = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,
+        (match, p1) => String.fromCharCode(Number('0x' + p1))
+      ));
       const url = new URL(window.location.origin + window.location.pathname);
       url.searchParams.set('data', encodedData);
       return url.toString();
