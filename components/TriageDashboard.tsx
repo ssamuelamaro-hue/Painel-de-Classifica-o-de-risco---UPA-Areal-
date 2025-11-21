@@ -189,8 +189,21 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     XLSX.writeFile(wb, "relatorio_triagem_master.xlsx");
   };
 
+  const getShareableLink = () => {
+    try {
+      const jsonData = JSON.stringify(data);
+      const encodedData = btoa(jsonData);
+      const url = new URL(window.location.origin + window.location.pathname);
+      url.searchParams.set('data', encodedData);
+      return url.toString();
+    } catch (e) {
+      console.error("Error generating share link:", e);
+      return window.location.href;
+    }
+  };
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(window.location.href);
+    navigator.clipboard.writeText(getShareableLink());
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -544,14 +557,14 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
             </div>
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
-                Copie o link abaixo para compartilhar o painel com outros usuários autorizados.
+                Copie o link abaixo para compartilhar o painel com os dados atualizados. O link contém todas as informações inseridas.
               </p>
               
               <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
                 <input 
                   type="text" 
                   readOnly 
-                  value={window.location.href}
+                  value={getShareableLink()}
                   className="bg-transparent text-sm text-slate-600 flex-1 outline-none truncate"
                 />
                 <button 

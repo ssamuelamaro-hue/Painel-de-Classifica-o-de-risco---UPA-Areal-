@@ -14,7 +14,25 @@ const initialData: TriageData[] = [
 ];
 
 const App: React.FC = () => {
-  const [data, setData] = useState<TriageData[]>(initialData);
+  // Initialize data: Check URL for shared data first, otherwise use initialData
+  const [data, setData] = useState<TriageData[]>(() => {
+    if (typeof window !== 'undefined') {
+      const params = new URLSearchParams(window.location.search);
+      const sharedData = params.get('data');
+      if (sharedData) {
+        try {
+          const parsedData = JSON.parse(atob(sharedData));
+          if (Array.isArray(parsedData)) {
+            return parsedData;
+          }
+        } catch (e) {
+          console.error("Erro ao carregar dados compartilhados:", e);
+        }
+      }
+    }
+    return initialData;
+  });
+
   const [insight, setInsight] = useState<string>("Carregando análise rápida...");
 
   // Fast Insight Logic
