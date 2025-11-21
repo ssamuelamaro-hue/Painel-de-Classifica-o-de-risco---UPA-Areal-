@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { TrendingUp, LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check } from 'lucide-react';
+import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface TriageDashboardProps {
@@ -61,17 +61,21 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     azul: 0
   });
 
-  // Calculate stats
-  const monthlyTotal = data.reduce((acc, curr) => acc + curr.total, 0);
-  const redTotal = data.reduce((acc, curr) => acc + curr.vermelho, 0);
-  const orangeTotal = data.reduce((acc, curr) => acc + curr.laranja, 0);
-  const yellowTotal = data.reduce((acc, curr) => acc + curr.amarelo, 0);
-  const greenTotal = data.reduce((acc, curr) => acc + curr.verde, 0);
-  const blueTotal = data.reduce((acc, curr) => acc + curr.azul, 0);
-
   // Filter data for the chart: only the last registered date
   const sortedData = [...data].sort((a, b) => new Date(a.dia).getTime() - new Date(b.dia).getTime());
   const chartData = sortedData.slice(-1);
+  
+  // Get the last day's data for the KPI cards
+  const lastDay = chartData[0] || { 
+    dia: '', 
+    vermelho: 0, 
+    laranja: 0, 
+    amarelo: 0, 
+    verde: 0, 
+    azul: 0, 
+    total: 0, 
+    id: '' 
+  };
 
   // Formatter for labels to hide zeros
   const labelFormatter = (value: number) => value > 0 ? value : '';
@@ -193,74 +197,71 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
 
   return (
     <div className="space-y-6">
-      {/* KPI Cards */}
+      {/* KPI Cards (Daily Stats) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
            <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
              <LayoutDashboard className="w-16 h-16 text-blue-600" />
            </div>
            <div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total do Mês</p>
-             <h3 className="text-3xl font-extrabold text-slate-800">{monthlyTotal}</h3>
+             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total do Dia</p>
+             <h3 className="text-3xl font-extrabold text-slate-800">{lastDay.total}</h3>
              <p className="text-xs text-slate-400 font-medium">pacientes</p>
-           </div>
-           <div className="mt-4 flex items-center gap-2 text-xs text-green-600 font-medium bg-green-50 w-fit px-2 py-1 rounded-full">
-             <TrendingUp className="w-3 h-3" /> +12% vs mês anterior
            </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500 flex flex-col justify-between hover:shadow-md transition-shadow">
            <div>
              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Emergência (Vermelho)</p>
-             <h3 className="text-3xl font-extrabold text-red-600">{redTotal}</h3>
+             <h3 className="text-3xl font-extrabold text-red-600">{lastDay.vermelho}</h3>
              <p className="text-xs text-slate-400 font-medium">pacientes</p>
            </div>
            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-red-500 h-full rounded-full" style={{ width: `${(redTotal / monthlyTotal) * 100}%` }}></div>
+             <div className="bg-red-500 h-full rounded-full" style={{ width: `${(lastDay.vermelho / (lastDay.total || 1)) * 100}%` }}></div>
            </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-orange-500 flex flex-col justify-between hover:shadow-md transition-shadow">
            <div>
              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Laranja (CRAI)</p>
-             <h3 className="text-3xl font-extrabold text-orange-600">{orangeTotal}</h3>
+             <h3 className="text-3xl font-extrabold text-orange-600">{lastDay.laranja}</h3>
              <p className="text-xs text-slate-400 font-medium">pacientes</p>
            </div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-orange-500 h-full rounded-full" style={{ width: `${(orangeTotal / monthlyTotal) * 100}%` }}></div>
+             <div className="bg-orange-500 h-full rounded-full" style={{ width: `${(lastDay.laranja / (lastDay.total || 1)) * 100}%` }}></div>
            </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-yellow-500 flex flex-col justify-between hover:shadow-md transition-shadow">
            <div>
              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Amarelo</p>
-             <h3 className="text-3xl font-extrabold text-yellow-600">{yellowTotal}</h3>
+             <h3 className="text-3xl font-extrabold text-yellow-600">{lastDay.amarelo}</h3>
              <p className="text-xs text-slate-400 font-medium">pacientes</p>
            </div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-yellow-500 h-full rounded-full" style={{ width: `${(yellowTotal / monthlyTotal) * 100}%` }}></div>
+             <div className="bg-yellow-500 h-full rounded-full" style={{ width: `${(lastDay.amarelo / (lastDay.total || 1)) * 100}%` }}></div>
            </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-green-500 flex flex-col justify-between hover:shadow-md transition-shadow">
            <div>
              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Verde</p>
-             <h3 className="text-3xl font-extrabold text-green-600">{greenTotal}</h3>
+             <h3 className="text-3xl font-extrabold text-green-600">{lastDay.verde}</h3>
              <p className="text-xs text-slate-400 font-medium">pacientes</p>
            </div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-green-500 h-full rounded-full" style={{ width: `${(greenTotal / monthlyTotal) * 100}%` }}></div>
+             <div className="bg-green-500 h-full rounded-full" style={{ width: `${(lastDay.verde / (lastDay.total || 1)) * 100}%` }}></div>
            </div>
         </div>
 
         <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-between hover:shadow-md transition-shadow">
            <div>
              <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Azul</p>
-             <h3 className="text-3xl font-extrabold text-blue-600">{blueTotal}</h3>
+             <h3 className="text-3xl font-extrabold text-blue-600">{lastDay.azul}</h3>
              <p className="text-xs text-slate-400 font-medium">pacientes</p>
            </div>
             <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-blue-500 h-full rounded-full" style={{ width: `${(blueTotal / monthlyTotal) * 100}%` }}></div>
+             <div className="bg-blue-500 h-full rounded-full" style={{ width: `${(lastDay.azul / (lastDay.total || 1)) * 100}%` }}></div>
            </div>
         </div>
       </div>
