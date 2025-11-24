@@ -3,8 +3,10 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft } from 'lucide-react';
+import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
+import { jsPDF } from "jspdf";
+import html2canvas from "html2canvas";
 
 interface TriageDashboardProps {
   data: TriageData[];
@@ -48,6 +50,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   const [authError, setAuthError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+  const [isPdfGenerating, setIsPdfGenerating] = useState(false);
 
   // Shortener States
   const [shortUrl, setShortUrl] = useState<string | null>(null);
@@ -259,8 +262,88 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     setTimeout(() => setCopied(false), 2000);
   };
 
+  const handlePrintComparison = () => {
+    window.print();
+  };
+
+  const handleSavePDFComparison = async () => {
+    const element = document.getElementById('comparison-content');
+    if (!element) return;
+    
+    setIsPdfGenerating(true);
+    try {
+      const canvas = await html2canvas(element, {
+        scale: 2,
+        useCORS: true,
+        backgroundColor: '#ffffff',
+      });
+      
+      const imgData = canvas.toDataURL('image/png');
+      const pdf = new jsPDF('l', 'mm', 'a4');
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+      
+      const imgProps = pdf.getImageProperties(imgData);
+      const ratio = imgProps.width / imgProps.height;
+      
+      const width = pdfWidth - 20;
+      const height = width / ratio;
+      
+      // If height exceeds page height, scale down
+      let finalWidth = width;
+      let finalHeight = height;
+      
+      if (height > pdfHeight - 20) {
+          finalHeight = pdfHeight - 20;
+          finalWidth = finalHeight * ratio;
+      }
+      
+      pdf.addImage(imgData, 'PNG', 10, 10, finalWidth, finalHeight);
+      pdf.save('comparativo-triagem.pdf');
+    } catch (e) {
+      console.error("Erro ao gerar PDF:", e);
+      alert("Ocorreu um erro ao gerar o PDF.");
+    } finally {
+      setIsPdfGenerating(false);
+    }
+  };
+
   return (
     <div className="space-y-6">
+      <style>{`
+        @media print {
+          body > * {
+            visibility: hidden;
+          }
+          #comparison-modal-root, #comparison-modal-root * {
+            visibility: visible;
+          }
+          #comparison-modal-root {
+            position: fixed;
+            left: 0;
+            top: 0;
+            width: 100vw;
+            height: 100vh;
+            background: white;
+            z-index: 99999;
+            padding: 0;
+            overflow: visible;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+          }
+          #comparison-content {
+            width: 100%;
+            max-width: 100%;
+            box-shadow: none;
+            border: none;
+          }
+          .no-print {
+            display: none !important;
+          }
+        }
+      `}</style>
+
       {/* KPI Cards (Daily Stats) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
         <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
@@ -387,15 +470,13 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 sm:gap-0">
           <div className="flex items-center gap-3">
              <h2 className="text-lg font-bold text-slate-800">Dados Detalhados</h2>
-             {selectedIds.length > 1 && (
-               <button 
-                onClick={() => setIsCompareModalOpen(true)}
-                className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 border border-indigo-200 transition-colors animate-in fade-in"
-               >
-                 <GitCompare className="w-3 h-3" />
-                 Comparar Selecionados ({selectedIds.length})
-               </button>
-             )}
+             <button 
+              onClick={() => setIsCompareModalOpen(true)}
+              className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 border border-indigo-200 transition-colors"
+             >
+               <GitCompare className="w-3 h-3" />
+               Comparar Datas
+             </button>
           </div>
           <div className="flex gap-2 flex-wrap justify-center">
              <div className="flex gap-2">
@@ -428,10 +509,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
           <table className="w-full text-sm text-left">
             <thead>
               <tr className="border-b border-slate-100">
-                <th className="px-4 py-4 w-10 bg-slate-50/50 rounded-l-lg text-center">
-                  <span className="sr-only">Selecionar</span>
-                </th>
-                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs bg-slate-50/50">Dia</th>
+                <th className="px-6 py-4 font-semibold text-slate-500 uppercase tracking-wider text-xs bg-slate-50/50 rounded-l-lg">Dia</th>
                 <th className="px-6 py-4 font-semibold text-red-600 uppercase tracking-wider text-xs bg-slate-50/50">Vermelho</th>
                 <th className="px-6 py-4 font-semibold text-orange-600 uppercase tracking-wider text-xs bg-slate-50/50">Laranja (CRAI)</th>
                 <th className="px-6 py-4 font-semibold text-yellow-600 uppercase tracking-wider text-xs bg-slate-50/50">Amarelo</th>
@@ -444,15 +522,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
             <tbody className="divide-y divide-slate-50">
               {tableData.map((row) => (
                 <tr key={row.id} className={`hover:bg-slate-50/80 transition-colors group ${selectedIds.includes(row.id) ? 'bg-blue-50/30' : ''}`}>
-                  <td className="px-4 py-4 text-center">
-                    <input 
-                      type="checkbox" 
-                      checked={selectedIds.includes(row.id)}
-                      onChange={() => toggleSelection(row.id)}
-                      className="w-4 h-4 rounded text-blue-600 focus:ring-blue-500 cursor-pointer border-slate-300"
-                      title="Selecionar para comparar"
-                    />
-                  </td>
                   <td className="px-6 py-4 font-bold text-slate-700">{row.dia.split('-').slice(1).reverse().join('/')}</td>
                   <td className="px-6 py-4">
                     <span className="bg-red-50 text-red-700 py-1 px-2 rounded font-bold text-xs">{row.vermelho}</span>
@@ -482,92 +551,152 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
 
       {/* Comparison Modal */}
       {isCompareModalOpen && (
-         <div className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
-          <div className="bg-white rounded-2xl w-full max-w-5xl shadow-2xl overflow-hidden flex flex-col max-h-[90vh]">
-            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50">
+         <div id="comparison-modal-root" className="fixed inset-0 bg-black/60 backdrop-blur-sm flex items-center justify-center z-[70] p-4">
+          <div className="bg-white rounded-2xl w-full max-w-6xl shadow-2xl overflow-hidden flex flex-col h-[90vh]">
+            {/* Header with Controls */}
+            <div className="p-6 border-b border-slate-100 flex justify-between items-center bg-slate-50/50 flex-shrink-0">
                <div>
                  <h3 className="text-xl font-bold text-slate-800 flex items-center gap-2">
                    <GitCompare className="w-6 h-6 text-indigo-600" />
                    Comparativo de Dias
                  </h3>
-                 <p className="text-sm text-slate-500 mt-1">Comparando {selectedIds.length} dias selecionados</p>
+                 <p className="text-sm text-slate-500 mt-1 hidden sm:block">Selecione os dias na lista para comparar visualmente</p>
                </div>
-               <button onClick={() => setIsCompareModalOpen(false)} className="bg-slate-200 hover:bg-slate-300 p-2 rounded-full transition-colors">
-                 <X className="w-5 h-5 text-slate-600" />
-               </button>
+               <div className="flex items-center gap-2 no-print">
+                 <button 
+                   onClick={handlePrintComparison}
+                   className="p-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-blue-600 transition-colors flex items-center gap-2 text-sm font-medium"
+                   title="Imprimir Comparativo"
+                 >
+                   <Printer className="w-4 h-4" />
+                   <span className="hidden sm:inline">Imprimir</span>
+                 </button>
+                 <button 
+                   onClick={handleSavePDFComparison}
+                   disabled={isPdfGenerating}
+                   className="p-2 rounded-lg bg-white border border-slate-200 text-slate-700 hover:bg-slate-50 hover:text-red-600 transition-colors flex items-center gap-2 text-sm font-medium disabled:opacity-50"
+                   title="Salvar como PDF"
+                 >
+                   {isPdfGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <FileDown className="w-4 h-4" />}
+                   <span className="hidden sm:inline">{isPdfGenerating ? 'Gerando...' : 'Salvar PDF'}</span>
+                 </button>
+                 <div className="w-px h-6 bg-slate-300 mx-2"></div>
+                 <button onClick={() => setIsCompareModalOpen(false)} className="bg-slate-200 hover:bg-slate-300 p-2 rounded-full transition-colors">
+                   <X className="w-5 h-5 text-slate-600" />
+                 </button>
+               </div>
             </div>
             
-            <div className="flex-1 overflow-y-auto p-6 space-y-8">
-              {/* Comparison Chart */}
-              <div className="h-[350px] w-full bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
-                 <ResponsiveContainer width="100%" height="100%">
-                  <BarChart data={getComparisonData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barGap={2}>
-                    <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-                    <XAxis 
-                      dataKey="dia" 
-                      tickFormatter={(val) => val.split('-').slice(1).reverse().join('/')}
-                      axisLine={false}
-                      tickLine={false}
-                      tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }}
-                      dy={10}
-                    />
-                    <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-                    <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-                    <Legend iconType="circle" />
-                    <Bar dataKey="vermelho" name="Vermelho" fill="#ef4444" radius={[4,4,0,0]} />
-                    <Bar dataKey="laranja" name="Laranja" fill="#f97316" radius={[4,4,0,0]} />
-                    <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4,4,0,0]} />
-                    <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4,4,0,0]} />
-                    <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4,4,0,0]} />
-                  </BarChart>
-                </ResponsiveContainer>
+            <div className="flex flex-1 overflow-hidden">
+              {/* Sidebar: Date Selection */}
+              <div className="w-64 border-r border-slate-100 overflow-y-auto bg-slate-50 p-4 hidden md:block no-print">
+                <h4 className="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider">Selecione os dias</h4>
+                <div className="space-y-2">
+                  {tableData.map(item => (
+                    <div 
+                      key={item.id}
+                      onClick={() => toggleSelection(item.id)}
+                      className={`p-3 rounded-lg cursor-pointer border transition-all ${
+                        selectedIds.includes(item.id) 
+                          ? 'bg-blue-50 border-blue-200 shadow-sm' 
+                          : 'bg-white border-slate-100 hover:border-blue-200'
+                      }`}
+                    >
+                      <div className="flex items-center gap-3">
+                         <div className={`w-4 h-4 rounded border flex items-center justify-center transition-colors ${
+                           selectedIds.includes(item.id) ? 'bg-blue-600 border-blue-600' : 'border-slate-300 bg-white'
+                         }`}>
+                           {selectedIds.includes(item.id) && <Check className="w-3 h-3 text-white" />}
+                         </div>
+                         <div>
+                           <p className={`font-bold text-sm ${selectedIds.includes(item.id) ? 'text-blue-700' : 'text-slate-700'}`}>
+                             {item.dia.split('-').slice(1).reverse().join('/')}
+                           </p>
+                           <p className="text-xs text-slate-400 mt-0.5">Total: {item.total}</p>
+                         </div>
+                      </div>
+                    </div>
+                  ))}
+                </div>
               </div>
 
-              {/* Stats Grid */}
-              <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
-                {getComparisonData().map((item) => (
-                  <div key={item.id} className="bg-slate-50 rounded-xl p-5 border border-slate-200">
-                    <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
-                      <span className="font-bold text-slate-700 flex items-center gap-2">
-                        <Calendar className="w-4 h-4 text-slate-400" />
-                        {item.dia.split('-').slice(1).reverse().join('/')}
-                      </span>
-                      <span className="bg-slate-200 text-slate-700 text-xs px-2 py-1 rounded font-bold">Total: {item.total}</span>
+              {/* Main Content: Charts & Stats */}
+              <div id="comparison-content" className="flex-1 overflow-y-auto p-6 bg-white">
+                {selectedIds.length === 0 ? (
+                  <div className="h-full flex flex-col items-center justify-center text-slate-400">
+                    <GitCompare className="w-16 h-16 mb-4 opacity-20" />
+                    <p>Selecione pelo menos um dia para visualizar os dados</p>
+                  </div>
+                ) : (
+                  <div className="space-y-8">
+                    {/* Comparison Chart */}
+                    <div className="h-[350px] w-full bg-white p-4 rounded-xl border border-slate-100 shadow-sm">
+                       <h4 className="text-sm font-bold text-slate-800 mb-4">Gráfico Comparativo</h4>
+                       <ResponsiveContainer width="100%" height="100%">
+                        <BarChart data={getComparisonData()} margin={{ top: 20, right: 30, left: 20, bottom: 5 }} barGap={2}>
+                          <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                          <XAxis 
+                            dataKey="dia" 
+                            tickFormatter={(val) => val.split('-').slice(1).reverse().join('/')}
+                            axisLine={false}
+                            tickLine={false}
+                            tick={{ fontSize: 12, fontWeight: 600, fill: '#64748b' }}
+                            dy={10}
+                          />
+                          <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
+                          <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
+                          <Legend iconType="circle" />
+                          <Bar dataKey="vermelho" name="Vermelho" fill="#ef4444" radius={[4,4,0,0]} />
+                          <Bar dataKey="laranja" name="Laranja" fill="#f97316" radius={[4,4,0,0]} />
+                          <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4,4,0,0]} />
+                          <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4,4,0,0]} />
+                          <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4,4,0,0]} />
+                        </BarChart>
+                      </ResponsiveContainer>
                     </div>
-                    <div className="space-y-3 text-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-red-600 font-medium">Vermelho</span>
-                        <span className="font-bold">{item.vermelho}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-orange-600 font-medium">Laranja (CRAI)</span>
-                        <span className="font-bold">{item.laranja}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-yellow-600 font-medium">Amarelo</span>
-                        <span className="font-bold">{item.amarelo}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-green-600 font-medium">Verde</span>
-                        <span className="font-bold">{item.verde}</span>
-                      </div>
-                      <div className="flex justify-between items-center">
-                        <span className="text-blue-600 font-medium">Azul</span>
-                        <span className="font-bold">{item.azul}</span>
+
+                    {/* Stats Grid */}
+                    <div>
+                      <h4 className="text-sm font-bold text-slate-800 mb-4">Detalhamento por Dia</h4>
+                      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4">
+                        {getComparisonData().map((item) => (
+                          <div key={item.id} className="bg-slate-50 rounded-xl p-5 border border-slate-200 break-inside-avoid">
+                            <div className="flex justify-between items-center mb-4 border-b border-slate-200 pb-3">
+                              <span className="font-bold text-slate-700 flex items-center gap-2">
+                                <Calendar className="w-4 h-4 text-slate-400" />
+                                {item.dia.split('-').slice(1).reverse().join('/')}
+                              </span>
+                              <span className="bg-slate-200 text-slate-700 text-xs px-2 py-1 rounded font-bold">Total: {item.total}</span>
+                            </div>
+                            <div className="space-y-3 text-sm">
+                              <div className="flex justify-between items-center">
+                                <span className="text-red-600 font-medium">Vermelho</span>
+                                <span className="font-bold">{item.vermelho}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-orange-600 font-medium">Laranja (CRAI)</span>
+                                <span className="font-bold">{item.laranja}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-yellow-600 font-medium">Amarelo</span>
+                                <span className="font-bold">{item.amarelo}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-green-600 font-medium">Verde</span>
+                                <span className="font-bold">{item.verde}</span>
+                              </div>
+                              <div className="flex justify-between items-center">
+                                <span className="text-blue-600 font-medium">Azul</span>
+                                <span className="font-bold">{item.azul}</span>
+                              </div>
+                            </div>
+                          </div>
+                        ))}
                       </div>
                     </div>
                   </div>
-                ))}
+                )}
               </div>
-            </div>
-            
-            <div className="p-4 border-t border-slate-100 bg-slate-50 flex justify-end">
-              <button 
-                onClick={() => setIsCompareModalOpen(false)}
-                className="bg-white border border-slate-300 text-slate-700 px-6 py-2 rounded-lg font-semibold hover:bg-slate-50 transition-colors"
-              >
-                Fechar Comparativo
-              </button>
             </div>
           </div>
          </div>
