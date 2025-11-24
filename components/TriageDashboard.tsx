@@ -1,9 +1,9 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { 
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown, TrendingUp, TrendingDown, Activity, Award, BarChart3 } from 'lucide-react';
+import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown, TrendingUp, TrendingDown, Activity, Award, BarChart3, CalendarDays, Filter, Calculator } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -63,6 +63,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   // Comparison State
   const [selectedIds, setSelectedIds] = useState<string[]>([]);
 
+  // Month Selection State
+  const [selectedMonth, setSelectedMonth] = useState<string>('');
+
   // State for New Entry Form
   const [newEntry, setNewEntry] = useState({
     dia: new Date().toISOString().split('T')[0],
@@ -73,8 +76,27 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     azul: 0
   });
 
-  // Filter data for the chart: only the last registered date
-  const sortedData = [...data].sort((a, b) => new Date(a.dia).getTime() - new Date(b.dia).getTime());
+  // Extract available months from data
+  const availableMonths = useMemo(() => {
+    const months = new Set(data.map(item => item.dia.substring(0, 7))); // YYYY-MM
+    return Array.from(months).sort().reverse();
+  }, [data]);
+
+  // Set default month if none selected
+  useEffect(() => {
+    if (!selectedMonth && availableMonths.length > 0) {
+      setSelectedMonth(availableMonths[0]);
+    }
+  }, [availableMonths, selectedMonth]);
+
+  // Filter Data by Selected Month
+  const filteredData = useMemo(() => {
+    if (!selectedMonth) return data;
+    return data.filter(item => item.dia.startsWith(selectedMonth));
+  }, [data, selectedMonth]);
+
+  // Filter data for the chart: only the last registered date OF THE SELECTED MONTH
+  const sortedData = [...filteredData].sort((a, b) => new Date(a.dia).getTime() - new Date(b.dia).getTime());
   const chartData = sortedData.slice(-1);
   
   // Data for table (descending order - newest first)
@@ -92,10 +114,22 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     id: '' 
   };
 
-  // Calculate Max and Min Attendance
-  const hasData = data.length > 0;
-  const maxAttendance = hasData ? data.reduce((prev, current) => (prev.total > current.total) ? prev : current) : null;
-  const minAttendance = hasData ? data.reduce((prev, current) => (prev.total < current.total) ? prev : current) : null;
+  // Calculate Monthly Totals (Consolidated)
+  const monthlyTotals = useMemo(() => {
+    return filteredData.reduce((acc, curr) => ({
+      vermelho: acc.vermelho + curr.vermelho,
+      laranja: acc.laranja + curr.laranja,
+      amarelo: acc.amarelo + curr.amarelo,
+      verde: acc.verde + curr.verde,
+      azul: acc.azul + curr.azul,
+      total: acc.total + curr.total
+    }), { vermelho: 0, laranja: 0, amarelo: 0, verde: 0, azul: 0, total: 0 });
+  }, [filteredData]);
+
+  // Calculate Max and Min Attendance FOR SELECTED MONTH
+  const hasData = filteredData.length > 0;
+  const maxAttendance = hasData ? filteredData.reduce((prev, current) => (prev.total > current.total) ? prev : current) : null;
+  const minAttendance = hasData ? filteredData.reduce((prev, current) => (prev.total < current.total) ? prev : current) : null;
 
   // Comparison Logic
   const toggleSelection = (id: string) => {
@@ -105,11 +139,20 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   };
 
   const getComparisonData = () => {
-    return sortedData.filter(item => selectedIds.includes(item.id));
+    return [...data].sort((a, b) => new Date(a.dia).getTime() - new Date(b.dia).getTime())
+      .filter(item => selectedIds.includes(item.id));
   };
 
   // Formatter for labels to hide zeros
   const labelFormatter = (value: number) => value > 0 ? value : '';
+
+  // Helper to format Month Name
+  const formatMonth = (yyyy_mm: string) => {
+    if (!yyyy_mm) return '';
+    const [year, month] = yyyy_mm.split('-');
+    const date = new Date(parseInt(year), parseInt(month) - 1, 1);
+    return date.toLocaleString('pt-BR', { month: 'long', year: 'numeric' });
+  };
 
   const openAuthForAdd = () => {
     setAuthMode('add');
@@ -143,13 +186,11 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         setIsEntryModalOpen(true);
       } else if (authMode === 'delete' && itemToDelete) {
         onDeleteData(itemToDelete);
-        // Remove from selection if it was selected
         setSelectedIds(prev => prev.filter(id => id !== itemToDelete));
       } else if (authMode === 'share') {
         setIsShareModalOpen(true);
       }
       
-      // Reset and close auth (except for share/entry modals which open next)
       setIsAuthModalOpen(false);
       setPasswordInput('');
       setAuthError(false);
@@ -182,11 +223,16 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
 
     onAddData(newData);
     
-    // Show success feedback and keep modal open
+    const entryMonth = newEntry.dia.substring(0, 7);
+    if (!availableMonths.includes(entryMonth)) {
+        setSelectedMonth(entryMonth);
+    } else {
+        setSelectedMonth(entryMonth);
+    }
+
     setSaveSuccess(true);
     setTimeout(() => setSaveSuccess(false), 3000);
     
-    // Reset form counts but allow continued entry
     setNewEntry({
       dia: new Date().toISOString().split('T')[0],
       vermelho: 0,
@@ -198,8 +244,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   };
 
   const handleExportExcel = () => {
-    // Format data for Excel (Brazilian Date format)
-    const formattedData = data.map(item => {
+    const formattedData = filteredData.map(item => {
       const [year, month, day] = item.dia.split('-');
       return {
         'Data': `${day}/${month}/${year}`,
@@ -212,20 +257,14 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
       };
     });
 
-    // Create Worksheet
     const ws = XLSX.utils.json_to_sheet(formattedData);
-    
-    // Create Workbook
     const wb = XLSX.utils.book_new();
     XLSX.utils.book_append_sheet(wb, ws, "Dados Triagem");
-
-    // Trigger Download
-    XLSX.writeFile(wb, "relatorio_triagem_master.xlsx");
+    XLSX.writeFile(wb, `relatorio_triagem_${selectedMonth || 'geral'}.xlsx`);
   };
 
   const getShareableLink = () => {
     try {
-      // Encode with same logic as App.tsx to ensure consistency
       const json = JSON.stringify(data);
       const encodedData = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,
         (match, p1) => String.fromCharCode(Number('0x' + p1))
@@ -243,7 +282,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     const longUrl = getShareableLink();
     setIsShortening(true);
     try {
-      // Use TinyURL API
       const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
       if (response.ok) {
         const short = await response.text();
@@ -294,7 +332,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
       const width = pdfWidth - 20;
       const height = width / ratio;
       
-      // If height exceeds page height, scale down
       let finalWidth = width;
       let finalHeight = height;
       
@@ -349,7 +386,37 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         }
       `}</style>
 
-      {/* 1. Evolução Diária Detalhada por Risco - Refined */}
+      {/* MONTH SELECTOR (FILTER) */}
+      <div className="bg-white rounded-2xl shadow-sm border border-slate-100 p-4 flex flex-col sm:flex-row justify-between items-center gap-4 bg-slate-50/50">
+           <div className="flex items-center gap-3">
+             <div className="bg-blue-100 p-2 rounded-lg">
+               <CalendarDays className="w-5 h-5 text-blue-600" />
+             </div>
+             <div>
+               <h2 className="text-base font-bold text-slate-800">Selecione o Mês</h2>
+               <p className="text-xs text-slate-500">O painel será atualizado com os dados do período</p>
+             </div>
+           </div>
+           <div className="relative w-full sm:w-64">
+             <div className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none">
+               <Filter className="h-4 w-4 text-slate-400" />
+             </div>
+             <select 
+               value={selectedMonth}
+               onChange={(e) => setSelectedMonth(e.target.value)}
+               className="block w-full pl-10 pr-4 py-2 text-sm border border-slate-300 rounded-lg focus:ring-blue-500 focus:border-blue-500 bg-white text-slate-700 font-medium capitalize outline-none shadow-sm"
+             >
+               {availableMonths.length === 0 && <option value="">Sem dados cadastrados</option>}
+               {availableMonths.map(month => (
+                 <option key={month} value={month} className="capitalize">
+                   {formatMonth(month)}
+                 </option>
+               ))}
+             </select>
+           </div>
+      </div>
+
+      {/* 1. Evolução Diária Detalhada por Risco */}
       <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
         <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/30">
            <div>
@@ -358,12 +425,13 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                 <h2 className="text-lg font-bold text-slate-800">Evolução Diária Detalhada por Risco</h2>
              </div>
              <p className="text-slate-500 text-sm pl-7">
-               Visualizando dados do dia: <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-xs">{chartData[0]?.dia ? chartData[0].dia.split('-').slice(1).reverse().join('/') : 'N/A'}</span>
+               Visualizando último dia do mês de: <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-xs capitalize">{formatMonth(selectedMonth)}</span>
              </p>
            </div>
         </div>
 
         <div className="p-6">
+          {chartData.length > 0 ? (
           <div className="h-[450px] w-full">
             <ResponsiveContainer width="100%" height="100%">
               <BarChart data={chartData} margin={{ top: 30, right: 30, left: 0, bottom: 0 }} barGap={6}>
@@ -402,10 +470,16 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               </BarChart>
             </ResponsiveContainer>
           </div>
+          ) : (
+            <div className="h-[450px] w-full flex flex-col items-center justify-center text-slate-400">
+               <Calendar className="w-12 h-12 mb-2 opacity-20" />
+               <p>Nenhum dado encontrado para {formatMonth(selectedMonth)}</p>
+            </div>
+          )}
         </div>
       </div>
 
-      {/* 2. Painel do Dia (KPIs) - Adjusted & Modernized */}
+      {/* 2. Painel do Dia (KPIs) */}
       <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
         {/* Featured Total Card */}
         <div className="bg-slate-800 p-6 rounded-2xl shadow-lg shadow-slate-200 flex flex-col justify-between relative overflow-hidden group">
@@ -413,7 +487,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
              <LayoutDashboard className="w-20 h-20 text-white" />
            </div>
            <div>
-             <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2">Painel do Dia</p>
+             <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2">Painel do Dia (Último Registro)</p>
              <h3 className="text-4xl font-black text-white">{lastDay.total}</h3>
              <p className="text-sm text-slate-400 font-medium mt-1">pacientes totais</p>
            </div>
@@ -479,10 +553,10 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         </div>
       </div>
 
-      {/* 3. Dia de Maior e Menor Atendimento - Modern & Flashy */}
+      {/* 3. Dia de Maior e Menor Atendimento */}
       {hasData && maxAttendance && minAttendance && (
         <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-          {/* Max Attendance - Modern Gradient Card */}
+          {/* Max Attendance */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-700 p-8 shadow-xl shadow-indigo-200 transition-transform hover:scale-[1.01]">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
             <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-pink-500/20 blur-3xl"></div>
@@ -493,7 +567,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                   <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
                     <TrendingUp className="w-4 h-4 text-white" />
                   </div>
-                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Pico Histórico</p>
+                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Pico no Mês</p>
                 </div>
                 <h3 className="text-5xl font-black text-white tracking-tight">{maxAttendance.total}</h3>
                 <p className="text-indigo-200 text-sm mt-1">pacientes atendidos</p>
@@ -507,7 +581,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
             </div>
           </div>
 
-          {/* Min Attendance - Modern Gradient Card */}
+          {/* Min Attendance */}
           <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-8 shadow-xl shadow-teal-200 transition-transform hover:scale-[1.01]">
             <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
             <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-yellow-400/20 blur-3xl"></div>
@@ -534,11 +608,51 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         </div>
       )}
 
+      {/* 4. Consolidado do Mês */}
+      {hasData && (
+          <div className="bg-white rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
+            <div className="p-6 border-b border-slate-50 flex items-center gap-2 bg-slate-50/30">
+              <Calculator className="w-5 h-5 text-blue-600" />
+              <h3 className="text-lg font-bold text-slate-800 uppercase tracking-wider">
+                Consolidado do Mês: <span className="text-blue-600 capitalize">{formatMonth(selectedMonth)}</span>
+              </h3>
+            </div>
+            
+            <div className="p-6 grid grid-cols-2 sm:grid-cols-3 md:grid-cols-6 gap-4">
+               <div className="bg-slate-100 rounded-xl p-4 text-center border border-slate-200 shadow-sm">
+                  <p className="text-xs text-slate-500 font-bold uppercase mb-1">Total Geral</p>
+                  <p className="text-2xl font-black text-slate-800">{monthlyTotals.total}</p>
+               </div>
+               <div className="bg-red-50 rounded-xl p-4 text-center border border-red-100 shadow-sm">
+                  <p className="text-xs text-red-600 font-bold uppercase mb-1">Vermelho</p>
+                  <p className="text-2xl font-black text-red-700">{monthlyTotals.vermelho}</p>
+               </div>
+               <div className="bg-orange-50 rounded-xl p-4 text-center border border-orange-100 shadow-sm">
+                  <p className="text-xs text-orange-600 font-bold uppercase mb-1">Laranja</p>
+                  <p className="text-2xl font-black text-orange-700">{monthlyTotals.laranja}</p>
+               </div>
+               <div className="bg-yellow-50 rounded-xl p-4 text-center border border-yellow-100 shadow-sm">
+                  <p className="text-xs text-yellow-600 font-bold uppercase mb-1">Amarelo</p>
+                  <p className="text-2xl font-black text-yellow-700">{monthlyTotals.amarelo}</p>
+               </div>
+               <div className="bg-green-50 rounded-xl p-4 text-center border border-green-100 shadow-sm">
+                  <p className="text-xs text-green-600 font-bold uppercase mb-1">Verde</p>
+                  <p className="text-2xl font-black text-green-700">{monthlyTotals.verde}</p>
+               </div>
+               <div className="bg-blue-50 rounded-xl p-4 text-center border border-blue-100 shadow-sm">
+                  <p className="text-xs text-blue-600 font-bold uppercase mb-1">Azul</p>
+                  <p className="text-2xl font-black text-blue-700">{monthlyTotals.azul}</p>
+               </div>
+            </div>
+          </div>
+      )}
+
       {/* Data Table & Actions */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
         <div className="flex flex-col sm:flex-row justify-between items-center mb-6 gap-4 sm:gap-0">
           <div className="flex items-center gap-3">
              <h2 className="text-lg font-bold text-slate-800">Dados Detalhados</h2>
+             <span className="text-xs bg-slate-100 text-slate-600 px-2 py-1 rounded font-medium capitalize">{formatMonth(selectedMonth)}</span>
              <button 
               onClick={() => setIsCompareModalOpen(true)}
               className="flex items-center gap-2 text-xs font-bold text-indigo-600 bg-indigo-50 px-3 py-1.5 rounded-full hover:bg-indigo-100 border border-indigo-200 transition-colors"
@@ -589,30 +703,38 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {tableData.map((row) => (
-                <tr key={row.id} className={`hover:bg-slate-50/80 transition-colors group ${selectedIds.includes(row.id) ? 'bg-blue-50/30' : ''}`}>
-                  <td className="px-6 py-4 font-bold text-slate-700">{row.dia.split('-').slice(1).reverse().join('/')}</td>
-                  <td className="px-6 py-4">
-                    <span className="bg-red-50 text-red-700 py-1 px-2 rounded font-bold text-xs">{row.vermelho}</span>
-                  </td>
-                  <td className="px-6 py-4">
-                     <span className="bg-orange-50 text-orange-700 py-1 px-2 rounded font-bold text-xs">{row.laranja}</span>
-                  </td>
-                  <td className="px-6 py-4 font-medium text-slate-600">{row.amarelo}</td>
-                  <td className="px-6 py-4 font-medium text-slate-600">{row.verde}</td>
-                  <td className="px-6 py-4 font-medium text-slate-600">{row.azul}</td>
-                  <td className="px-6 py-4 font-extrabold text-slate-800">{row.total}</td>
-                  <td className="px-6 py-4">
-                    <button 
-                      onClick={() => openAuthForDelete(row.id)}
-                      className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
-                      title="Excluir registro"
-                    >
-                      <Trash2 className="w-4 h-4" />
-                    </button>
+              {tableData.length > 0 ? (
+                tableData.map((row) => (
+                  <tr key={row.id} className={`hover:bg-slate-50/80 transition-colors group ${selectedIds.includes(row.id) ? 'bg-blue-50/30' : ''}`}>
+                    <td className="px-6 py-4 font-bold text-slate-700">{row.dia.split('-').slice(1).reverse().join('/')}</td>
+                    <td className="px-6 py-4">
+                      <span className="bg-red-50 text-red-700 py-1 px-2 rounded font-bold text-xs">{row.vermelho}</span>
+                    </td>
+                    <td className="px-6 py-4">
+                      <span className="bg-orange-50 text-orange-700 py-1 px-2 rounded font-bold text-xs">{row.laranja}</span>
+                    </td>
+                    <td className="px-6 py-4 font-medium text-slate-600">{row.amarelo}</td>
+                    <td className="px-6 py-4 font-medium text-slate-600">{row.verde}</td>
+                    <td className="px-6 py-4 font-medium text-slate-600">{row.azul}</td>
+                    <td className="px-6 py-4 font-extrabold text-slate-800">{row.total}</td>
+                    <td className="px-6 py-4">
+                      <button 
+                        onClick={() => openAuthForDelete(row.id)}
+                        className="text-slate-400 hover:text-red-500 transition-colors p-1 rounded-full hover:bg-red-50"
+                        title="Excluir registro"
+                      >
+                        <Trash2 className="w-4 h-4" />
+                      </button>
+                    </td>
+                  </tr>
+                ))
+              ) : (
+                <tr>
+                  <td colSpan={8} className="px-6 py-8 text-center text-slate-400 italic">
+                    Nenhum registro encontrado para este mês.
                   </td>
                 </tr>
-              ))}
+              )}
             </tbody>
           </table>
         </div>
@@ -660,8 +782,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               {/* Sidebar: Date Selection */}
               <div className="w-64 border-r border-slate-100 overflow-y-auto bg-slate-50 p-4 hidden md:block no-print">
                 <h4 className="font-bold text-slate-700 mb-4 text-sm uppercase tracking-wider">Selecione os dias</h4>
+                {/* We use ALL sorted data for the sidebar to allow comparing across months if needed, or we could use tableData */}
                 <div className="space-y-2">
-                  {tableData.map(item => (
+                  {[...data].sort((a,b) => new Date(b.dia).getTime() - new Date(a.dia).getTime()).map(item => (
                     <div 
                       key={item.id}
                       onClick={() => toggleSelection(item.id)}
