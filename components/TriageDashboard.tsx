@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check } from 'lucide-react';
+import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 
 interface TriageDashboardProps {
@@ -46,6 +46,10 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   const [authError, setAuthError] = useState(false);
   const [copied, setCopied] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
+
+  // Shortener States
+  const [shortUrl, setShortUrl] = useState<string | null>(null);
+  const [isShortening, setIsShortening] = useState(false);
 
   // State for Authentication Context ('add', 'delete', or 'share')
   const [authMode, setAuthMode] = useState<'add' | 'delete' | 'share' | null>(null);
@@ -102,6 +106,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     setIsAuthModalOpen(true);
     setAuthError(false);
     setPasswordInput('');
+    setShortUrl(null); // Reset short url when opening modal
   };
 
   const handleAuthSubmit = (e: React.FormEvent) => {
@@ -205,8 +210,30 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     }
   };
 
+  const handleShortenLink = async () => {
+    const longUrl = getShareableLink();
+    setIsShortening(true);
+    try {
+      // Use TinyURL API
+      const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
+      if (response.ok) {
+        const short = await response.text();
+        setShortUrl(short);
+      } else {
+        alert("Erro ao encurtar o link. O serviço pode estar indisponível.");
+      }
+    } catch (error) {
+      console.error("Shorten error:", error);
+      alert("Não foi possível conectar ao encurtador. Verifique sua conexão ou bloqueadores de anúncios.");
+    } finally {
+      setIsShortening(false);
+    }
+  };
+
+  const currentDisplayUrl = shortUrl || getShareableLink();
+
   const handleCopyLink = () => {
-    navigator.clipboard.writeText(getShareableLink());
+    navigator.clipboard.writeText(currentDisplayUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
   };
@@ -549,7 +576,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
       {/* Share Modal */}
       {isShareModalOpen && (
         <div className="fixed inset-0 bg-black/50 backdrop-blur-sm flex items-center justify-center z-[60]">
-           <div className="bg-white rounded-xl p-6 w-full max-w-sm shadow-2xl">
+           <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
                 <Share2 className="w-5 h-5 text-blue-600" /> Compartilhar Acesso
@@ -567,19 +594,33 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                 <input 
                   type="text" 
                   readOnly 
-                  value={getShareableLink()}
+                  value={currentDisplayUrl}
                   className="bg-transparent text-sm text-slate-600 flex-1 outline-none truncate"
                 />
                 <button 
                   onClick={handleCopyLink}
                   className={`p-2 rounded-md transition-colors ${copied ? 'bg-green-100 text-green-700' : 'bg-white text-slate-500 border border-slate-200 hover:bg-slate-100'}`}
+                  title="Copiar"
                 >
                   {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
                 </button>
               </div>
+
+              {/* URL Shortener Action */}
+              {!shortUrl && (
+                <button 
+                  onClick={handleShortenLink}
+                  disabled={isShortening}
+                  className="w-full bg-indigo-50 text-indigo-700 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors text-sm flex items-center justify-center gap-2 border border-indigo-200"
+                >
+                  {isShortening ? <Loader2 className="w-4 h-4 animate-spin" /> : <LinkIcon className="w-4 h-4" />}
+                  {isShortening ? 'Gerando link curto...' : 'Encurtar Link (TinyURL)'}
+                </button>
+              )}
+
               {copied && <p className="text-xs text-green-600 text-center font-medium">Link copiado para a área de transferência!</p>}
               
-              <button onClick={() => setIsShareModalOpen(false)} className="w-full bg-slate-100 text-slate-700 py-2 rounded-lg font-medium hover:bg-slate-200 transition-colors text-sm">
+              <button onClick={() => setIsShareModalOpen(false)} className="w-full bg-slate-100 text-slate-700 py-2 rounded-lg font-medium hover:bg-slate-200 transition-colors text-sm mt-2">
                 Fechar
               </button>
             </div>
