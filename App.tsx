@@ -110,7 +110,7 @@ const App: React.FC = () => {
         </header>
 
         <main className="flex-1 overflow-y-auto p-6">
-          <div className="max-w-7xl mx-auto flex flex-col h-full">
+          <div className="max-w-7xl mx-auto flex flex-col min-h-full">
             {/* Dashboard - Full Width */}
             <div className="flex-1 min-h-0">
               <TriageDashboard 
@@ -119,6 +119,13 @@ const App: React.FC = () => {
                 onDeleteData={handleDeleteData}
               />
             </div>
+
+            {/* Footer / Credits */}
+            <footer className="mt-12 py-6 text-center border-t border-slate-200">
+              <p className="text-xs font-semibold text-slate-400 uppercase tracking-widest">
+                Desenvolvido por Samuel Amaro
+              </p>
+            </footer>
           </div>
         </main>
       </div>
