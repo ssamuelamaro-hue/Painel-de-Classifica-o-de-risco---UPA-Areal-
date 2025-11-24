@@ -69,6 +69,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   const sortedData = [...data].sort((a, b) => new Date(a.dia).getTime() - new Date(b.dia).getTime());
   const chartData = sortedData.slice(-1);
   
+  // Data for table (descending order - newest first)
+  const tableData = [...sortedData].reverse();
+  
   // Get the last day's data for the KPI cards
   const lastDay = chartData[0] || { 
     dia: '', 
@@ -407,7 +410,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               </tr>
             </thead>
             <tbody className="divide-y divide-slate-50">
-              {data.map((row) => (
+              {tableData.map((row) => (
                 <tr key={row.id} className="hover:bg-slate-50/80 transition-colors group">
                   <td className="px-6 py-4 font-bold text-slate-700">{row.dia.split('-').slice(1).reverse().join('/')}</td>
                   <td className="px-6 py-4">
