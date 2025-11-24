@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown } from 'lucide-react';
+import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown, TrendingUp, TrendingDown } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -91,6 +91,11 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     total: 0, 
     id: '' 
   };
+
+  // Calculate Max and Min Attendance
+  const hasData = data.length > 0;
+  const maxAttendance = hasData ? data.reduce((prev, current) => (prev.total > current.total) ? prev : current) : null;
+  const minAttendance = hasData ? data.reduce((prev, current) => (prev.total < current.total) ? prev : current) : null;
 
   // Comparison Logic
   const toggleSelection = (id: string) => {
@@ -412,6 +417,53 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
            </div>
         </div>
       </div>
+
+      {/* Historical Extremes (Max/Min) */}
+      {hasData && maxAttendance && minAttendance && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="bg-gradient-to-br from-indigo-50 to-white p-5 rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-indigo-100 p-3 rounded-xl">
+                <TrendingUp className="w-6 h-6 text-indigo-600" />
+              </div>
+              <div>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Maior Atendimento</p>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-2xl font-extrabold text-slate-800">{maxAttendance.total}</h3>
+                  <p className="text-xs text-slate-400">pacientes</p>
+                </div>
+                <p className="text-sm font-medium text-indigo-600 mt-1">
+                  Dia: {maxAttendance.dia.split('-').slice(1).reverse().join('/')}
+                </p>
+              </div>
+            </div>
+            <div className="hidden sm:block text-right text-xs text-slate-400">
+               Pico de movimento<br/>registrado no painel
+            </div>
+          </div>
+
+          <div className="bg-gradient-to-br from-slate-50 to-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
+            <div className="flex items-center gap-4">
+              <div className="bg-slate-200 p-3 rounded-xl">
+                <TrendingDown className="w-6 h-6 text-slate-600" />
+              </div>
+              <div>
+                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Menor Atendimento</p>
+                <div className="flex items-baseline gap-2">
+                  <h3 className="text-2xl font-extrabold text-slate-800">{minAttendance.total}</h3>
+                  <p className="text-xs text-slate-400">pacientes</p>
+                </div>
+                <p className="text-sm font-medium text-slate-600 mt-1">
+                  Dia: {minAttendance.dia.split('-').slice(1).reverse().join('/')}
+                </p>
+              </div>
+            </div>
+             <div className="hidden sm:block text-right text-xs text-slate-400">
+               Menor fluxo<br/>registrado no painel
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Main Chart Section */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
