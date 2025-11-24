@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown, TrendingUp, TrendingDown } from 'lucide-react';
+import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown, TrendingUp, TrendingDown, Activity, Award, BarChart3 } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -314,7 +314,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   };
 
   return (
-    <div className="space-y-6">
+    <div className="space-y-8">
       <style>{`
         @media print {
           body > * {
@@ -349,173 +349,190 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         }
       `}</style>
 
-      {/* KPI Cards (Daily Stats) */}
-      <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-        <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 flex flex-col justify-between relative overflow-hidden group hover:shadow-md transition-shadow">
-           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
-             <LayoutDashboard className="w-16 h-16 text-blue-600" />
-           </div>
+      {/* 1. Evolução Diária Detalhada por Risco - Refined */}
+      <div className="bg-white rounded-3xl shadow-lg border border-slate-100 overflow-hidden">
+        <div className="p-6 border-b border-slate-50 flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 bg-slate-50/30">
            <div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Total do Dia</p>
-             <h3 className="text-3xl font-extrabold text-slate-800">{lastDay.total}</h3>
-             <p className="text-xs text-slate-400 font-medium">pacientes</p>
-           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-red-500 flex flex-col justify-between hover:shadow-md transition-shadow">
-           <div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Emergência (Vermelho)</p>
-             <h3 className="text-3xl font-extrabold text-red-600">{lastDay.vermelho}</h3>
-             <p className="text-xs text-slate-400 font-medium">pacientes</p>
-           </div>
-           <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-red-500 h-full rounded-full" style={{ width: `${(lastDay.vermelho / (lastDay.total || 1)) * 100}%` }}></div>
-           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-orange-500 flex flex-col justify-between hover:shadow-md transition-shadow">
-           <div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Laranja (CRAI)</p>
-             <h3 className="text-3xl font-extrabold text-orange-600">{lastDay.laranja}</h3>
-             <p className="text-xs text-slate-400 font-medium">pacientes</p>
-           </div>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-orange-500 h-full rounded-full" style={{ width: `${(lastDay.laranja / (lastDay.total || 1)) * 100}%` }}></div>
-           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-yellow-500 flex flex-col justify-between hover:shadow-md transition-shadow">
-           <div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Amarelo</p>
-             <h3 className="text-3xl font-extrabold text-yellow-600">{lastDay.amarelo}</h3>
-             <p className="text-xs text-slate-400 font-medium">pacientes</p>
-           </div>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-yellow-500 h-full rounded-full" style={{ width: `${(lastDay.amarelo / (lastDay.total || 1)) * 100}%` }}></div>
-           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-green-500 flex flex-col justify-between hover:shadow-md transition-shadow">
-           <div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Verde</p>
-             <h3 className="text-3xl font-extrabold text-green-600">{lastDay.verde}</h3>
-             <p className="text-xs text-slate-400 font-medium">pacientes</p>
-           </div>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-green-500 h-full rounded-full" style={{ width: `${(lastDay.verde / (lastDay.total || 1)) * 100}%` }}></div>
-           </div>
-        </div>
-
-        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-4 border-blue-500 flex flex-col justify-between hover:shadow-md transition-shadow">
-           <div>
-             <p className="text-slate-500 text-xs font-bold uppercase tracking-wider mb-1">Azul</p>
-             <h3 className="text-3xl font-extrabold text-blue-600">{lastDay.azul}</h3>
-             <p className="text-xs text-slate-400 font-medium">pacientes</p>
-           </div>
-            <div className="w-full bg-slate-100 h-1.5 rounded-full mt-4 overflow-hidden">
-             <div className="bg-blue-500 h-full rounded-full" style={{ width: `${(lastDay.azul / (lastDay.total || 1)) * 100}%` }}></div>
-           </div>
-        </div>
-      </div>
-
-      {/* Historical Extremes (Max/Min) */}
-      {hasData && maxAttendance && minAttendance && (
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-          <div className="bg-gradient-to-br from-indigo-50 to-white p-5 rounded-2xl shadow-sm border border-indigo-100 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="bg-indigo-100 p-3 rounded-xl">
-                <TrendingUp className="w-6 h-6 text-indigo-600" />
-              </div>
-              <div>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Maior Atendimento</p>
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-2xl font-extrabold text-slate-800">{maxAttendance.total}</h3>
-                  <p className="text-xs text-slate-400">pacientes</p>
-                </div>
-                <p className="text-sm font-medium text-indigo-600 mt-1">
-                  Dia: {maxAttendance.dia.split('-').slice(1).reverse().join('/')}
-                </p>
-              </div>
-            </div>
-            <div className="hidden sm:block text-right text-xs text-slate-400">
-               Pico de movimento<br/>registrado no painel
-            </div>
-          </div>
-
-          <div className="bg-gradient-to-br from-slate-50 to-white p-5 rounded-2xl shadow-sm border border-slate-200 flex items-center justify-between">
-            <div className="flex items-center gap-4">
-              <div className="bg-slate-200 p-3 rounded-xl">
-                <TrendingDown className="w-6 h-6 text-slate-600" />
-              </div>
-              <div>
-                <p className="text-slate-500 text-xs font-bold uppercase tracking-wider">Menor Atendimento</p>
-                <div className="flex items-baseline gap-2">
-                  <h3 className="text-2xl font-extrabold text-slate-800">{minAttendance.total}</h3>
-                  <p className="text-xs text-slate-400">pacientes</p>
-                </div>
-                <p className="text-sm font-medium text-slate-600 mt-1">
-                  Dia: {minAttendance.dia.split('-').slice(1).reverse().join('/')}
-                </p>
-              </div>
-            </div>
-             <div className="hidden sm:block text-right text-xs text-slate-400">
-               Menor fluxo<br/>registrado no painel
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Main Chart Section */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100">
-        <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center mb-8 gap-4">
-           <div>
-             <h2 className="text-xl font-bold text-slate-800">Evolução Diária Detalhada por Risco</h2>
-             <p className="text-slate-500 text-sm mt-1">
-               Visualizando dados do último dia registrado: <span className="font-bold text-slate-700">{chartData[0]?.dia ? chartData[0].dia.split('-').slice(1).reverse().join('/') : 'Nenhum dado'}</span>
+             <div className="flex items-center gap-2 mb-1">
+                <BarChart3 className="w-5 h-5 text-blue-600" />
+                <h2 className="text-lg font-bold text-slate-800">Evolução Diária Detalhada por Risco</h2>
+             </div>
+             <p className="text-slate-500 text-sm pl-7">
+               Visualizando dados do dia: <span className="font-bold text-slate-700 bg-slate-100 px-2 py-0.5 rounded text-xs">{chartData[0]?.dia ? chartData[0].dia.split('-').slice(1).reverse().join('/') : 'N/A'}</span>
              </p>
            </div>
         </div>
 
-        <div className="h-[450px] w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={chartData} margin={{ top: 20, right: 20, left: 0, bottom: 0 }} barGap={4}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis 
-                dataKey="dia" 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#64748b', fontSize: 12, fontWeight: 600 }} 
-                dy={10} 
-                tickFormatter={(val) => val.split('-').slice(1).reverse().join('/')} 
-              />
-              <YAxis 
-                axisLine={false} 
-                tickLine={false} 
-                tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} 
-              />
-              <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc' }} />
-              <Legend iconType="circle" wrapperStyle={{ paddingTop: '20px', fontSize: '14px' }} />
-              
-              {/* Unstacked bars with maxBarSize to prevent overly wide bars when single day */}
-              <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4,4,0,0]} maxBarSize={60}>
-                <LabelList dataKey="azul" position="top" fill="#3b82f6" fontSize={10} fontWeight="bold" formatter={labelFormatter} />
-              </Bar>
-              <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4,4,0,0]} maxBarSize={60}>
-                <LabelList dataKey="verde" position="top" fill="#22c55e" fontSize={10} fontWeight="bold" formatter={labelFormatter} />
-              </Bar>
-              <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4,4,0,0]} maxBarSize={60}>
-                <LabelList dataKey="amarelo" position="top" fill="#ca8a04" fontSize={10} fontWeight="bold" formatter={labelFormatter} />
-              </Bar>
-              <Bar dataKey="laranja" name="Laranja (CRAI)" fill="#f97316" radius={[4,4,0,0]} maxBarSize={60}>
-                <LabelList dataKey="laranja" position="top" fill="#ea580c" fontSize={10} fontWeight="bold" formatter={labelFormatter} />
-              </Bar>
-              <Bar dataKey="vermelho" name="Vermelho" fill="#ef4444" radius={[4,4,0,0]} maxBarSize={60}>
-                <LabelList dataKey="vermelho" position="top" fill="#dc2626" fontSize={10} fontWeight="bold" formatter={labelFormatter} />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
+        <div className="p-6">
+          <div className="h-[450px] w-full">
+            <ResponsiveContainer width="100%" height="100%">
+              <BarChart data={chartData} margin={{ top: 30, right: 30, left: 0, bottom: 0 }} barGap={6}>
+                <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
+                <XAxis 
+                  dataKey="dia" 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#64748b', fontSize: 13, fontWeight: 600 }} 
+                  dy={15} 
+                  tickFormatter={(val) => val.split('-').slice(1).reverse().join('/')} 
+                />
+                <YAxis 
+                  axisLine={false} 
+                  tickLine={false} 
+                  tick={{ fill: '#94a3b8', fontSize: 12, fontWeight: 500 }} 
+                />
+                <Tooltip content={<CustomTooltip />} cursor={{ fill: '#f8fafc', radius: 4 }} />
+                <Legend iconType="circle" wrapperStyle={{ paddingTop: '30px', fontSize: '13px', fontWeight: 500 }} />
+                
+                <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[6,6,0,0]} maxBarSize={70}>
+                  <LabelList dataKey="azul" position="top" fill="#3b82f6" fontSize={11} fontWeight="800" formatter={labelFormatter} dy={-5} />
+                </Bar>
+                <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[6,6,0,0]} maxBarSize={70}>
+                  <LabelList dataKey="verde" position="top" fill="#22c55e" fontSize={11} fontWeight="800" formatter={labelFormatter} dy={-5} />
+                </Bar>
+                <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[6,6,0,0]} maxBarSize={70}>
+                  <LabelList dataKey="amarelo" position="top" fill="#ca8a04" fontSize={11} fontWeight="800" formatter={labelFormatter} dy={-5} />
+                </Bar>
+                <Bar dataKey="laranja" name="Laranja (CRAI)" fill="#f97316" radius={[6,6,0,0]} maxBarSize={70}>
+                  <LabelList dataKey="laranja" position="top" fill="#ea580c" fontSize={11} fontWeight="800" formatter={labelFormatter} dy={-5} />
+                </Bar>
+                <Bar dataKey="vermelho" name="Vermelho" fill="#ef4444" radius={[6,6,0,0]} maxBarSize={70}>
+                  <LabelList dataKey="vermelho" position="top" fill="#dc2626" fontSize={11} fontWeight="800" formatter={labelFormatter} dy={-5} />
+                </Bar>
+              </BarChart>
+            </ResponsiveContainer>
+          </div>
         </div>
       </div>
+
+      {/* 2. Painel do Dia (KPIs) - Adjusted & Modernized */}
+      <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
+        {/* Featured Total Card */}
+        <div className="bg-slate-800 p-6 rounded-2xl shadow-lg shadow-slate-200 flex flex-col justify-between relative overflow-hidden group">
+           <div className="absolute top-0 right-0 p-4 opacity-10 group-hover:opacity-20 transition-opacity">
+             <LayoutDashboard className="w-20 h-20 text-white" />
+           </div>
+           <div>
+             <p className="text-blue-200 text-xs font-bold uppercase tracking-widest mb-2">Painel do Dia</p>
+             <h3 className="text-4xl font-black text-white">{lastDay.total}</h3>
+             <p className="text-sm text-slate-400 font-medium mt-1">pacientes totais</p>
+           </div>
+           <div className="mt-4 pt-4 border-t border-slate-700/50 flex items-center justify-between text-slate-400 text-xs">
+              <span>{lastDay.dia ? lastDay.dia.split('-').slice(1).reverse().join('/') : '--/--'}</span>
+              <Activity className="w-4 h-4" />
+           </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-[6px] border-red-500 flex flex-col justify-between hover:shadow-md transition-shadow">
+           <div>
+             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Emergência</p>
+             <h3 className="text-4xl font-extrabold text-slate-800">{lastDay.vermelho}</h3>
+             <p className="text-xs text-slate-400 font-medium mt-1">pacientes</p>
+           </div>
+           <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+             <div className="bg-red-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(lastDay.vermelho / (lastDay.total || 1)) * 100}%` }}></div>
+           </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-[6px] border-orange-500 flex flex-col justify-between hover:shadow-md transition-shadow">
+           <div>
+             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Laranja (CRAI)</p>
+             <h3 className="text-4xl font-extrabold text-slate-800">{lastDay.laranja}</h3>
+             <p className="text-xs text-slate-400 font-medium mt-1">pacientes</p>
+           </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+             <div className="bg-orange-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(lastDay.laranja / (lastDay.total || 1)) * 100}%` }}></div>
+           </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-[6px] border-yellow-500 flex flex-col justify-between hover:shadow-md transition-shadow">
+           <div>
+             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Amarelo</p>
+             <h3 className="text-4xl font-extrabold text-slate-800">{lastDay.amarelo}</h3>
+             <p className="text-xs text-slate-400 font-medium mt-1">pacientes</p>
+           </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+             <div className="bg-yellow-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(lastDay.amarelo / (lastDay.total || 1)) * 100}%` }}></div>
+           </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-[6px] border-green-500 flex flex-col justify-between hover:shadow-md transition-shadow">
+           <div>
+             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Verde</p>
+             <h3 className="text-4xl font-extrabold text-slate-800">{lastDay.verde}</h3>
+             <p className="text-xs text-slate-400 font-medium mt-1">pacientes</p>
+           </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+             <div className="bg-green-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(lastDay.verde / (lastDay.total || 1)) * 100}%` }}></div>
+           </div>
+        </div>
+
+        <div className="bg-white p-6 rounded-2xl shadow-sm border-l-[6px] border-blue-500 flex flex-col justify-between hover:shadow-md transition-shadow">
+           <div>
+             <p className="text-slate-400 text-xs font-bold uppercase tracking-wider mb-2">Azul</p>
+             <h3 className="text-4xl font-extrabold text-slate-800">{lastDay.azul}</h3>
+             <p className="text-xs text-slate-400 font-medium mt-1">pacientes</p>
+           </div>
+            <div className="w-full bg-slate-100 h-2 rounded-full mt-4 overflow-hidden">
+             <div className="bg-blue-500 h-full rounded-full transition-all duration-1000" style={{ width: `${(lastDay.azul / (lastDay.total || 1)) * 100}%` }}></div>
+           </div>
+        </div>
+      </div>
+
+      {/* 3. Dia de Maior e Menor Atendimento - Modern & Flashy */}
+      {hasData && maxAttendance && minAttendance && (
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+          {/* Max Attendance - Modern Gradient Card */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-violet-600 to-indigo-700 p-8 shadow-xl shadow-indigo-200 transition-transform hover:scale-[1.01]">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+            <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-pink-500/20 blur-3xl"></div>
+            
+            <div className="relative flex items-center justify-between z-10">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
+                    <TrendingUp className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-indigo-100 text-xs font-bold uppercase tracking-widest">Pico Histórico</p>
+                </div>
+                <h3 className="text-5xl font-black text-white tracking-tight">{maxAttendance.total}</h3>
+                <p className="text-indigo-200 text-sm mt-1">pacientes atendidos</p>
+              </div>
+              <div className="text-right">
+                <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center min-w-[100px]">
+                   <p className="text-indigo-200 text-xs font-bold uppercase mb-1">DATA</p>
+                   <p className="text-xl font-bold text-white">{maxAttendance.dia.split('-').slice(1).reverse().join('/')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+
+          {/* Min Attendance - Modern Gradient Card */}
+          <div className="relative overflow-hidden rounded-3xl bg-gradient-to-br from-emerald-500 to-teal-600 p-8 shadow-xl shadow-teal-200 transition-transform hover:scale-[1.01]">
+            <div className="absolute -right-10 -top-10 h-40 w-40 rounded-full bg-white/10 blur-3xl"></div>
+            <div className="absolute -left-10 -bottom-10 h-40 w-40 rounded-full bg-yellow-400/20 blur-3xl"></div>
+            
+            <div className="relative flex items-center justify-between z-10">
+              <div>
+                <div className="flex items-center gap-2 mb-2">
+                  <div className="bg-white/20 p-1.5 rounded-lg backdrop-blur-sm">
+                    <TrendingDown className="w-4 h-4 text-white" />
+                  </div>
+                  <p className="text-emerald-100 text-xs font-bold uppercase tracking-widest">Menor Movimento</p>
+                </div>
+                <h3 className="text-5xl font-black text-white tracking-tight">{minAttendance.total}</h3>
+                <p className="text-emerald-100 text-sm mt-1">pacientes atendidos</p>
+              </div>
+              <div className="text-right">
+                <div className="bg-white/10 backdrop-blur-md border border-white/10 rounded-2xl p-4 text-center min-w-[100px]">
+                   <p className="text-emerald-100 text-xs font-bold uppercase mb-1">DATA</p>
+                   <p className="text-xl font-bold text-white">{minAttendance.dia.split('-').slice(1).reverse().join('/')}</p>
+                </div>
+              </div>
+            </div>
+          </div>
+        </div>
+      )}
 
       {/* Data Table & Actions */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-100 overflow-hidden">
