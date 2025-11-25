@@ -177,8 +177,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
       Vermelho: item.vermelho,
       'Laranja (CRAI)': item.laranja,
       Amarelo: item.amarelo,
-      Verde: item.verde,
       Azul: item.azul,
+      Verde: item.verde,
       Total: item.total
     })));
     const wb = XLSX.utils.book_new();
@@ -282,46 +282,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         </div>
       </div>
 
-      {/* 2. Monthly Summary Bar */}
-      <div className="bg-slate-800 text-white rounded-xl p-4 shadow-md flex flex-wrap justify-between items-center gap-4">
-        <div className="flex items-center gap-2">
-           <div className="bg-white/10 p-2 rounded-lg">
-             <Calendar className="w-5 h-5 text-blue-400" />
-           </div>
-           <div>
-             <p className="text-xs text-slate-400 uppercase tracking-wider font-bold">Consolidado Mensal</p>
-             <p className="text-lg font-bold">{selectedMonth}</p>
-           </div>
-        </div>
-        <div className="flex flex-wrap gap-4 md:gap-8">
-           <div className="text-center">
-             <p className="text-xs text-red-400 font-bold mb-1">Vermelho</p>
-             <p className="text-xl font-bold">{monthlyTotals.vermelho}</p>
-           </div>
-           <div className="text-center">
-             <p className="text-xs text-orange-400 font-bold mb-1">Laranja (CRAI)</p>
-             <p className="text-xl font-bold">{monthlyTotals.laranja}</p>
-           </div>
-           <div className="text-center">
-             <p className="text-xs text-yellow-400 font-bold mb-1">Amarelo</p>
-             <p className="text-xl font-bold">{monthlyTotals.amarelo}</p>
-           </div>
-           <div className="text-center">
-             <p className="text-xs text-green-400 font-bold mb-1">Verde</p>
-             <p className="text-xl font-bold">{monthlyTotals.verde}</p>
-           </div>
-           <div className="text-center">
-             <p className="text-xs text-blue-400 font-bold mb-1">Azul</p>
-             <p className="text-xl font-bold">{monthlyTotals.azul}</p>
-           </div>
-           <div className="pl-4 border-l border-slate-600 text-center">
-             <p className="text-xs text-slate-400 font-bold mb-1">TOTAL</p>
-             <p className="text-2xl font-bold">{monthlyTotals.total}</p>
-           </div>
-        </div>
-      </div>
-
-      {/* 3. Main Chart */}
+      {/* 2. Main Chart (Priority 1) */}
       <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-lg font-bold text-slate-800">Evolução Diária por Classificação de Risco</h2>
@@ -345,32 +306,34 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4, 4, 0, 0]} maxBarSize={60}>
                 <LabelList dataKey="amarelo" position="top" fill="#ca8a04" fontSize={12} fontWeight="bold" />
               </Bar>
-              <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                <LabelList dataKey="verde" position="top" fill="#16a34a" fontSize={12} fontWeight="bold" />
-              </Bar>
+              {/* Swapped Green and Blue to match request order: Yellow -> Blue -> Green */}
               <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60}>
                 <LabelList dataKey="azul" position="top" fill="#2563eb" fontSize={12} fontWeight="bold" />
+              </Bar>
+              <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                <LabelList dataKey="verde" position="top" fill="#16a34a" fontSize={12} fontWeight="bold" />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
         </div>
       </div>
 
-      {/* 4. Daily Panel (KPIs) */}
+      {/* 3. Daily Panel (KPIs) (Priority 2) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
-        <div className="bg-slate-900 rounded-xl p-6 text-white shadow-lg relative overflow-hidden">
+        <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-lg relative overflow-hidden transition-all hover:scale-[1.02]">
           <div className="relative z-10">
-            <h3 className="text-slate-400 text-sm font-bold uppercase tracking-wider mb-1">Total do Dia</h3>
+            <h3 className="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">Total do Dia</h3>
             <div className="flex items-baseline gap-2">
-              <span className="text-4xl font-bold">{lastDay?.total || 0}</span>
-              <span className="text-sm text-slate-400">pacientes</span>
+              <span className="text-5xl font-extrabold tracking-tight">{lastDay?.total || 0}</span>
+              <span className="text-sm text-blue-200 font-medium">pacientes</span>
             </div>
-            <div className="mt-4 w-full bg-slate-700 h-1.5 rounded-full overflow-hidden">
-              <div className="bg-blue-500 h-full rounded-full" style={{ width: '100%' }}></div>
+            <div className="mt-4 w-full bg-black/20 h-2 rounded-full overflow-hidden backdrop-blur-sm">
+              <div className="bg-white/90 h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]" style={{ width: '100%' }}></div>
             </div>
+            <p className="text-xs text-blue-200 mt-2 font-medium">Atendimentos hoje</p>
           </div>
-          <div className="absolute right-0 bottom-0 opacity-10 pointer-events-none">
-            <Users className="w-32 h-32 text-white" />
+          <div className="absolute right-[-10px] bottom-[-10px] opacity-10 pointer-events-none rotate-12">
+            <Users className="w-40 h-40 text-white" />
           </div>
         </div>
 
@@ -378,8 +341,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
           { key: 'vermelho', label: 'Vermelho', color: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-50', bar: 'bg-red-500' },
           { key: 'laranja', label: 'Laranja (CRAI)', color: 'bg-orange-500', text: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-500' },
           { key: 'amarelo', label: 'Amarelo', color: 'bg-yellow-500', text: 'text-yellow-600', bg: 'bg-yellow-50', bar: 'bg-yellow-500' },
-          { key: 'verde', label: 'Verde', color: 'bg-green-500', text: 'text-green-600', bg: 'bg-green-50', bar: 'bg-green-500' },
           { key: 'azul', label: 'Azul', color: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-50', bar: 'bg-blue-500' },
+          { key: 'verde', label: 'Verde', color: 'bg-green-500', text: 'text-green-600', bg: 'bg-green-50', bar: 'bg-green-500' },
         ].map((card) => {
           const value = lastDay ? (lastDay as any)[card.key] : 0;
           const total = lastDay ? lastDay.total : 1;
@@ -408,7 +371,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         })}
       </div>
 
-      {/* 5. High/Low Stats */}
+      {/* 4. High/Low Stats (Priority 3) */}
       <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
         {/* Max Attendance */}
         <div className="relative overflow-hidden rounded-2xl bg-gradient-to-br from-purple-600 to-indigo-700 p-6 text-white shadow-lg">
@@ -447,43 +410,45 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         </div>
       </div>
 
-      {/* 6. Monthly Consolidated Panel (Moved below stats as requested) */}
-      <div className="bg-white rounded-2xl border border-slate-200 shadow-sm p-6">
-        <div className="flex items-center gap-3 mb-6">
-          <div className="bg-blue-100 p-2 rounded-lg text-blue-600">
-            <Calendar className="w-6 h-6" />
+      {/* 5. Monthly Consolidated Panel (Priority 4 - Redesigned) */}
+      <div className="bg-gradient-to-r from-gray-900 to-slate-800 rounded-2xl shadow-xl p-6 overflow-hidden relative">
+        <div className="absolute top-0 right-0 w-64 h-64 bg-white/5 rounded-full blur-3xl -mr-16 -mt-16 pointer-events-none"></div>
+        
+        <div className="flex items-center gap-3 mb-8 relative z-10">
+          <div className="bg-white/10 p-3 rounded-xl backdrop-blur-sm border border-white/10">
+            <Calendar className="w-6 h-6 text-blue-300" />
           </div>
           <div>
-            <h3 className="text-lg font-bold text-slate-800">Consolidado Total do Mês</h3>
-            <p className="text-sm text-slate-500">Somatório de todos os atendimentos de {selectedMonth}</p>
+            <h3 className="text-xl font-bold text-white tracking-tight">Consolidado Total do Mês</h3>
+            <p className="text-sm text-slate-400">Somatório de todos os atendimentos de <span className="text-white font-semibold">{selectedMonth}</span></p>
           </div>
         </div>
         
-        <div className="grid grid-cols-2 md:grid-cols-6 gap-4">
+        <div className="grid grid-cols-2 md:grid-cols-6 gap-4 relative z-10">
            {/* Total Card */}
-           <div className="col-span-2 md:col-span-1 bg-slate-50 rounded-xl p-4 border border-slate-100">
-             <p className="text-xs text-slate-500 font-bold uppercase mb-2">Total Geral</p>
-             <p className="text-3xl font-bold text-slate-800">{monthlyTotals.total}</p>
-             <p className="text-xs text-slate-400 mt-1">pacientes</p>
+           <div className="col-span-2 md:col-span-1 bg-white/10 backdrop-blur-md rounded-xl p-5 border border-white/10 flex flex-col justify-center">
+             <p className="text-xs text-blue-200 font-bold uppercase mb-2 tracking-wider">Total Geral</p>
+             <p className="text-4xl font-extrabold text-white">{monthlyTotals.total}</p>
+             <p className="text-xs text-slate-400 mt-1">pacientes no mês</p>
            </div>
            
            {/* Color Cards */}
            {[
-             { label: 'Vermelho', value: monthlyTotals.vermelho, color: 'text-red-600' },
-             { label: 'Laranja', value: monthlyTotals.laranja, color: 'text-orange-600' },
-             { label: 'Amarelo', value: monthlyTotals.amarelo, color: 'text-yellow-600' },
-             { label: 'Verde', value: monthlyTotals.verde, color: 'text-green-600' },
-             { label: 'Azul', value: monthlyTotals.azul, color: 'text-blue-600' },
+             { label: 'Vermelho', value: monthlyTotals.vermelho, color: 'text-red-400', border: 'border-red-500/30' },
+             { label: 'Laranja', value: monthlyTotals.laranja, color: 'text-orange-400', border: 'border-orange-500/30' },
+             { label: 'Amarelo', value: monthlyTotals.amarelo, color: 'text-yellow-400', border: 'border-yellow-500/30' },
+             { label: 'Azul', value: monthlyTotals.azul, color: 'text-blue-400', border: 'border-blue-500/30' },
+             { label: 'Verde', value: monthlyTotals.verde, color: 'text-green-400', border: 'border-green-500/30' },
            ].map((item, idx) => (
-             <div key={idx} className="bg-white rounded-xl p-4 border border-slate-100 flex flex-col justify-center items-center text-center">
+             <div key={idx} className={`bg-white/5 backdrop-blur-sm rounded-xl p-4 border ${item.border} flex flex-col justify-center items-center text-center hover:bg-white/10 transition-colors`}>
                 <span className={`text-2xl font-bold ${item.color}`}>{item.value}</span>
-                <span className="text-xs font-bold text-slate-500 mt-1">{item.label}</span>
+                <span className="text-xs font-bold text-slate-400 mt-2 uppercase tracking-wide">{item.label}</span>
              </div>
            ))}
         </div>
       </div>
 
-      {/* 7. Detailed Table */}
+      {/* 6. Detailed Table (Priority 5) */}
       <div className="bg-white rounded-xl border border-slate-200 shadow-sm overflow-hidden">
         <div className="p-6 border-b border-slate-100 flex flex-col md:flex-row justify-between items-center gap-4">
           <h3 className="font-bold text-slate-800 text-lg">Dados Detalhados</h3>
@@ -503,8 +468,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                 <th className="px-6 py-4 text-red-600">Vermelho</th>
                 <th className="px-6 py-4 text-orange-600">Laranja (CRAI)</th>
                 <th className="px-6 py-4 text-yellow-600">Amarelo</th>
-                <th className="px-6 py-4 text-green-600">Verde</th>
                 <th className="px-6 py-4 text-blue-600">Azul</th>
+                <th className="px-6 py-4 text-green-600">Verde</th>
                 <th className="px-6 py-4">Total</th>
                 <th className="px-6 py-4 text-center">Ações</th>
               </tr>
@@ -516,8 +481,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                   <td className="px-6 py-4 font-bold text-red-600 bg-red-50/50">{item.vermelho}</td>
                   <td className="px-6 py-4 font-bold text-orange-600 bg-orange-50/50">{item.laranja}</td>
                   <td className="px-6 py-4 font-bold text-yellow-600 bg-yellow-50/50">{item.amarelo}</td>
-                  <td className="px-6 py-4 font-bold text-green-600 bg-green-50/50">{item.verde}</td>
                   <td className="px-6 py-4 font-bold text-blue-600 bg-blue-50/50">{item.azul}</td>
+                  <td className="px-6 py-4 font-bold text-green-600 bg-green-50/50">{item.verde}</td>
                   <td className="px-6 py-4 font-bold text-slate-800">{item.total}</td>
                   <td className="px-6 py-4 text-center">
                     <button 
@@ -605,8 +570,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                  { label: 'Vermelho', key: 'vermelho', color: 'text-red-600' },
                  { label: 'Laranja (CRAI)', key: 'laranja', color: 'text-orange-600' },
                  { label: 'Amarelo', key: 'amarelo', color: 'text-yellow-600' },
-                 { label: 'Verde', key: 'verde', color: 'text-green-600' },
                  { label: 'Azul', key: 'azul', color: 'text-blue-600' },
+                 { label: 'Verde', key: 'verde', color: 'text-green-600' },
                ].map((field) => (
                  <div key={field.key}>
                    <label className={`block text-xs font-bold uppercase mb-1 ${field.color}`}>{field.label}</label>
@@ -713,9 +678,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                </div>
             </div>
             
-            <div className="flex-1 flex overflow-hidden">
+            <div className="flex-1 flex flex-col md:flex-row overflow-hidden">
                {/* Sidebar Selection */}
-               <div className="w-64 bg-slate-50 border-r border-slate-200 p-4 overflow-y-auto hidden md:block">
+               <div className="w-full md:w-64 bg-slate-50 border-b md:border-b-0 md:border-r border-slate-200 p-4 overflow-y-auto h-48 md:h-auto flex-shrink-0">
                   <p className="text-xs font-bold text-slate-400 uppercase mb-3">Selecione os dias</p>
                   <div className="space-y-2">
                     {[...data].sort((a,b) => new Date(b.dia).getTime() - new Date(a.dia).getTime()).map(item => (
@@ -762,8 +727,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                                 <Bar dataKey="vermelho" name="Vermelho" fill="#ef4444" radius={[4,4,0,0]} />
                                 <Bar dataKey="laranja" name="Laranja" fill="#f97316" radius={[4,4,0,0]} />
                                 <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4,4,0,0]} />
-                                <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4,4,0,0]} />
                                 <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4,4,0,0]} />
+                                <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4,4,0,0]} />
                               </BarChart>
                             </ResponsiveContainer>
                          </div>
@@ -780,8 +745,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                                 <div className="flex justify-between"><span className="text-red-600 font-medium">Vermelho</span> <span>{day.vermelho}</span></div>
                                 <div className="flex justify-between"><span className="text-orange-600 font-medium">Laranja</span> <span>{day.laranja}</span></div>
                                 <div className="flex justify-between"><span className="text-yellow-600 font-medium">Amarelo</span> <span>{day.amarelo}</span></div>
-                                <div className="flex justify-between"><span className="text-green-600 font-medium">Verde</span> <span>{day.verde}</span></div>
                                 <div className="flex justify-between"><span className="text-blue-600 font-medium">Azul</span> <span>{day.azul}</span></div>
+                                <div className="flex justify-between"><span className="text-green-600 font-medium">Verde</span> <span>{day.verde}</span></div>
                               </div>
                             </div>
                           ))}
