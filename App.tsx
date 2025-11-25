@@ -3,6 +3,7 @@ import TriageDashboard from './components/TriageDashboard';
 import { TriageData } from './types';
 import { Activity, Sparkles } from 'lucide-react';
 import { getFastInsight } from './services/geminiService';
+import LZString from 'lz-string';
 
 // Mock Initial Data
 const initialData: TriageData[] = [
@@ -13,18 +14,34 @@ const initialData: TriageData[] = [
   { id: '5', dia: '2023-10-05', vermelho: 2, laranja: 7, amarelo: 16, verde: 28, azul: 9, total: 62 },
 ];
 
-// Robust Base64 encoding/decoding for UTF-8 (handling accents)
+// Robust compression/encoding
 const encodeData = (data: any) => {
   const json = JSON.stringify(data);
-  return btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,
-      (match, p1) => String.fromCharCode(Number('0x' + p1))
-  ));
+  // Use LZString to compress data for URL storage
+  return LZString.compressToEncodedURIComponent(json);
 };
 
 const decodeData = (str: string) => {
-  return JSON.parse(decodeURIComponent(atob(str).split('').map(function(c) {
-      return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
-  }).join('')));
+  // 1. Try decompressing first (New Format)
+  const decompressed = LZString.decompressFromEncodedURIComponent(str);
+  if (decompressed) {
+    return JSON.parse(decompressed);
+  }
+  
+  // 2. Fallback: Try decoding legacy Base64 (Old Format)
+  try {
+    return JSON.parse(decodeURIComponent(atob(str).split('').map(function(c) {
+        return '%' + ('00' + c.charCodeAt(0).toString(16)).slice(-2);
+    }).join('')));
+  } catch (e) {
+    // 3. Last resort: simple atob
+    try {
+      return JSON.parse(atob(str));
+    } catch (e2) {
+      console.error("Falha total na decodificação", e2);
+      return null;
+    }
+  }
 };
 
 const App: React.FC = () => {
@@ -40,13 +57,7 @@ const App: React.FC = () => {
             return parsedData;
           }
         } catch (e) {
-          console.error("Erro ao carregar dados compartilhados (tentando fallback simples):", e);
-          // Fallback for simple base64 (backward compatibility)
-          try {
-            return JSON.parse(atob(sharedData));
-          } catch (e2) {
-             console.error("Falha total na decodificação", e2);
-          }
+          console.error("Erro ao carregar dados compartilhados:", e);
         }
       }
     }
@@ -55,7 +66,7 @@ const App: React.FC = () => {
 
   const [insight, setInsight] = useState<string>("Carregando análise rápida...");
 
-  // Sync URL with data changes
+  // Sync URL with data changes using Compression
   useEffect(() => {
     try {
       if (data) {

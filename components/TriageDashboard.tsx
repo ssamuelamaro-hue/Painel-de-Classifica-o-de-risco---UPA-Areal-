@@ -7,6 +7,7 @@ import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, Fi
 import * as XLSX from 'xlsx';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
+import LZString from 'lz-string';
 
 interface TriageDashboardProps {
   data: TriageData[];
@@ -261,9 +262,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   const getShareableLink = () => {
     try {
       const json = JSON.stringify(data);
-      const encodedData = btoa(encodeURIComponent(json).replace(/%([0-9A-F]{2})/g,
-        (match, p1) => String.fromCharCode(Number('0x' + p1))
-      ));
+      // Use LZString to compress - matches App.tsx decoding logic
+      const encodedData = LZString.compressToEncodedURIComponent(json);
       const url = new URL(window.location.origin + window.location.pathname);
       url.searchParams.set('data', encodedData);
       return url.toString();
