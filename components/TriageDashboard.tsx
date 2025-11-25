@@ -3,7 +3,7 @@ import {
   BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, LabelList, TooltipProps
 } from 'recharts';
 import { TriageData } from '../types';
-import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown, TrendingUp, TrendingDown, Activity, Award, BarChart3, CalendarDays, Filter, Calculator } from 'lucide-react';
+import { LayoutDashboard, Calendar, Lock, Plus, X, Save, AlertCircle, Trash2, FileSpreadsheet, Share2, Copy, Check, Link as LinkIcon, Loader2, GitCompare, ArrowRightLeft, Printer, FileDown, TrendingUp, TrendingDown, Activity, Award, BarChart3, CalendarDays, Filter, Calculator, ExternalLink } from 'lucide-react';
 import * as XLSX from 'xlsx';
 import { jsPDF } from "jspdf";
 import html2canvas from "html2canvas";
@@ -51,10 +51,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   const [copied, setCopied] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState(false);
   const [isPdfGenerating, setIsPdfGenerating] = useState(false);
-
-  // Shortener States
-  const [shortUrl, setShortUrl] = useState<string | null>(null);
-  const [isShortening, setIsShortening] = useState(false);
 
   // State for Authentication Context ('add', 'delete', or 'share')
   const [authMode, setAuthMode] = useState<'add' | 'delete' | 'share' | null>(null);
@@ -176,7 +172,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     setIsAuthModalOpen(true);
     setAuthError(false);
     setPasswordInput('');
-    setShortUrl(null); // Reset short url when opening modal
   };
 
   const handleAuthSubmit = (e: React.FormEvent) => {
@@ -278,31 +273,22 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
     }
   };
 
-  const handleShortenLink = async () => {
-    const longUrl = getShareableLink();
-    setIsShortening(true);
-    try {
-      const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(longUrl)}`);
-      if (response.ok) {
-        const short = await response.text();
-        setShortUrl(short);
-      } else {
-        alert("Erro ao encurtar o link. O serviço pode estar indisponível.");
-      }
-    } catch (error) {
-      console.error("Shorten error:", error);
-      alert("Não foi possível conectar ao encurtador. Verifique sua conexão ou bloqueadores de anúncios.");
-    } finally {
-      setIsShortening(false);
-    }
-  };
-
-  const currentDisplayUrl = shortUrl || getShareableLink();
+  const currentDisplayUrl = getShareableLink();
 
   const handleCopyLink = () => {
     navigator.clipboard.writeText(currentDisplayUrl);
     setCopied(true);
     setTimeout(() => setCopied(false), 2000);
+  };
+
+  const handleOpenShortener = () => {
+    // 1. Copy link to clipboard
+    navigator.clipboard.writeText(currentDisplayUrl);
+    setCopied(true);
+    setTimeout(() => setCopied(false), 2000);
+
+    // 2. Redirect to encurtador
+    window.open('https://www.encurtador.com.br/', '_blank');
   };
 
   const handlePrintComparison = () => {
@@ -1037,7 +1023,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
            <div className="bg-white rounded-xl p-6 w-full max-w-md shadow-2xl">
             <div className="flex justify-between items-center mb-4">
               <h3 className="text-lg font-bold text-slate-800 flex items-center gap-2">
-                <Share2 className="w-5 h-5 text-blue-600" /> Compartilhar Acesso
+                <Share2 className="w-5 h-6 text-blue-600" /> Compartilhar Acesso
               </h3>
               <button onClick={() => setIsShareModalOpen(false)} className="text-slate-400 hover:text-slate-600">
                 <X className="w-5 h-5" />
@@ -1045,7 +1031,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
             </div>
             <div className="space-y-4">
               <p className="text-sm text-slate-600">
-                Copie o link abaixo para compartilhar o painel com os dados atualizados. O link contém todas as informações inseridas.
+                O link abaixo contém todos os dados atuais do painel. Você pode copiar ou redirecionar para um encurtador.
               </p>
               
               <div className="flex items-center gap-2 bg-slate-50 p-2 rounded-lg border border-slate-200">
@@ -1064,19 +1050,19 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                 </button>
               </div>
 
-              {/* URL Shortener Action */}
-              {!shortUrl && (
-                <button 
-                  onClick={handleShortenLink}
-                  disabled={isShortening}
-                  className="w-full bg-indigo-50 text-indigo-700 py-2 rounded-lg font-medium hover:bg-indigo-100 transition-colors text-sm flex items-center justify-center gap-2 border border-indigo-200"
-                >
-                  {isShortening ? <Loader2 className="w-4 h-4 animate-spin" /> : <LinkIcon className="w-4 h-4" />}
-                  {isShortening ? 'Gerando link curto...' : 'Encurtar Link (TinyURL)'}
-                </button>
-              )}
+              {/* URL Shortener Action - Redirect */}
+              <button 
+                onClick={handleOpenShortener}
+                className="w-full bg-indigo-50 text-indigo-700 py-3 rounded-lg font-medium hover:bg-indigo-100 transition-colors text-sm flex items-center justify-center gap-2 border border-indigo-200 shadow-sm"
+              >
+                <ExternalLink className="w-4 h-4" />
+                Encurtar no Encurtador.com.br
+              </button>
+              <p className="text-[10px] text-center text-slate-400">
+                O link será copiado automaticamente e você será redirecionado para colar no site.
+              </p>
 
-              {copied && <p className="text-xs text-green-600 text-center font-medium">Link copiado para a área de transferência!</p>}
+              {copied && <p className="text-xs text-green-600 text-center font-medium mt-2">Link copiado para a área de transferência!</p>}
               
               <button onClick={() => setIsShareModalOpen(false)} className="w-full bg-slate-100 text-slate-700 py-2 rounded-lg font-medium hover:bg-slate-200 transition-colors text-sm mt-2">
                 Fechar
