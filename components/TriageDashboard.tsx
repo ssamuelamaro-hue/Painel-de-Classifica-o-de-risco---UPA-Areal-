@@ -338,11 +338,11 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         </div>
 
         {[
-          { key: 'vermelho', label: 'Vermelho', color: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-50', bar: 'bg-red-500' },
-          { key: 'laranja', label: 'Laranja (CRAI)', color: 'bg-orange-500', text: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-500' },
           { key: 'amarelo', label: 'Amarelo', color: 'bg-yellow-500', text: 'text-yellow-600', bg: 'bg-yellow-50', bar: 'bg-yellow-500' },
           { key: 'azul', label: 'Azul', color: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-50', bar: 'bg-blue-500' },
           { key: 'verde', label: 'Verde', color: 'bg-green-500', text: 'text-green-600', bg: 'bg-green-50', bar: 'bg-green-500' },
+          { key: 'vermelho', label: 'Vermelho', color: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-50', bar: 'bg-red-500' },
+          { key: 'laranja', label: 'Laranja (CRAI)', color: 'bg-orange-500', text: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-500' },
         ].map((card) => {
           const value = lastDay ? (lastDay as any)[card.key] : 0;
           const total = lastDay ? lastDay.total : 1;
@@ -365,7 +365,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div className={`${card.bar} h-full rounded-full`} style={{ width: `${percent}%` }}></div>
               </div>
-              <p className="text-xs text-slate-400 mt-2 font-medium text-right">{percent}% do dia</p>
+              {/* Percentage text removed as requested */}
             </div>
           );
         })}
