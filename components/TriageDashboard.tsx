@@ -4,7 +4,7 @@ import {
 } from 'recharts';
 import { 
   Calendar, Lock, Plus, Trash2, Download, FileText, 
-  TrendingUp, TrendingDown, Users, Check, Share2, Copy, Link as LinkIcon, AlertTriangle, Printer, FileDown, GitCompare, ExternalLink
+  TrendingUp, TrendingDown, Users, Check, Share2, Copy, Link as LinkIcon, AlertTriangle, Printer, FileDown, GitCompare, ExternalLink, Info, ChevronDown, ChevronUp
 } from 'lucide-react';
 import { TriageData } from '../types';
 import * as XLSX from 'xlsx';
@@ -66,6 +66,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
   const [shareLink, setShareLink] = useState('');
   const [copied, setCopied] = useState(false);
   const [selectedComparisonIds, setSelectedComparisonIds] = useState<string[]>([]);
+  const [activeLegend, setActiveLegend] = useState<string | null>(null);
   
   // --- DERIVED DATA ---
   const months = useMemo(() => {
@@ -306,7 +307,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4, 4, 0, 0]} maxBarSize={60}>
                 <LabelList dataKey="amarelo" position="top" fill="#ca8a04" fontSize={12} fontWeight="bold" />
               </Bar>
-              {/* Swapped Green and Blue to match request order: Yellow -> Blue -> Green */}
               <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60}>
                 <LabelList dataKey="azul" position="top" fill="#2563eb" fontSize={12} fontWeight="bold" />
               </Bar>
@@ -338,18 +338,63 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         </div>
 
         {[
-          { key: 'amarelo', label: 'Amarelo', color: 'bg-yellow-500', text: 'text-yellow-600', bg: 'bg-yellow-50', bar: 'bg-yellow-500' },
-          { key: 'azul', label: 'Azul', color: 'bg-blue-500', text: 'text-blue-600', bg: 'bg-blue-50', bar: 'bg-blue-500' },
-          { key: 'verde', label: 'Verde', color: 'bg-green-500', text: 'text-green-600', bg: 'bg-green-50', bar: 'bg-green-500' },
-          { key: 'vermelho', label: 'Vermelho', color: 'bg-red-500', text: 'text-red-600', bg: 'bg-red-50', bar: 'bg-red-500' },
-          { key: 'laranja', label: 'Laranja (CRAI)', color: 'bg-orange-500', text: 'text-orange-600', bg: 'bg-orange-50', bar: 'bg-orange-500' },
+          { 
+            key: 'amarelo', 
+            label: 'Amarelo', 
+            color: 'bg-yellow-500', 
+            text: 'text-yellow-600', 
+            bg: 'bg-yellow-50', 
+            bar: 'bg-yellow-500',
+            description: 'Urgente: Risco moderado e não imediato.' 
+          },
+          { 
+            key: 'azul', 
+            label: 'Azul', 
+            color: 'bg-blue-500', 
+            text: 'text-blue-600', 
+            bg: 'bg-blue-50', 
+            bar: 'bg-blue-500',
+            description: 'Não Urgente: Casos que não necessitam de atendimento imediato e podem esperar.'
+          },
+          { 
+            key: 'verde', 
+            label: 'Verde', 
+            color: 'bg-green-500', 
+            text: 'text-green-600', 
+            bg: 'bg-green-50', 
+            bar: 'bg-green-500',
+            description: 'Pouco Urgente: Casos de baixa gravidade e com o paciente estável.'
+          },
+          { 
+            key: 'vermelho', 
+            label: 'Vermelho', 
+            color: 'bg-red-500', 
+            text: 'text-red-600', 
+            bg: 'bg-red-50', 
+            bar: 'bg-red-500',
+            description: 'Vermelha (Emergencial): Risco iminente de morte. O paciente precisa ser atendido imediatamente.'
+          },
+          { 
+            key: 'laranja', 
+            label: 'Laranja (CRAI)', 
+            color: 'bg-orange-500', 
+            text: 'text-orange-600', 
+            bg: 'bg-orange-50', 
+            bar: 'bg-orange-500',
+            description: 'Laranja (Centro de Referência ao Infantojuvenil) atende crianças e adolescentes com até 18 anos de idade vítimas ou testemunhas de violência.'
+          },
         ].map((card) => {
           const value = lastDay ? (lastDay as any)[card.key] : 0;
           const total = lastDay ? lastDay.total : 1;
           const percent = ((value / total) * 100).toFixed(1);
+          const isExpanded = activeLegend === card.key;
           
           return (
-            <div key={card.key} className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-shadow">
+            <div 
+              key={card.key} 
+              onClick={() => setActiveLegend(isExpanded ? null : card.key)}
+              className="bg-white rounded-xl p-6 border border-slate-200 shadow-sm hover:shadow-md transition-all cursor-pointer group"
+            >
               <div className="flex justify-between items-start mb-4">
                 <div>
                   <h3 className={`text-sm font-bold uppercase tracking-wider mb-1 ${card.text}`}>{card.label}</h3>
@@ -358,14 +403,31 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                     <span className="text-xs text-slate-400 font-medium">pacientes</span>
                   </div>
                 </div>
-                <div className={`p-2 rounded-lg ${card.bg}`}>
-                  <div className={`w-4 h-4 rounded-full ${card.color}`}></div>
+                <div className="flex flex-col items-end gap-2">
+                  <div className={`p-2 rounded-lg ${card.bg}`}>
+                    <div className={`w-4 h-4 rounded-full ${card.color}`}></div>
+                  </div>
+                  {isExpanded ? 
+                    <ChevronUp className="w-4 h-4 text-slate-300" /> : 
+                    <ChevronDown className="w-4 h-4 text-slate-300 group-hover:text-slate-500" />
+                  }
                 </div>
               </div>
               <div className="w-full bg-slate-100 h-1.5 rounded-full overflow-hidden">
                 <div className={`${card.bar} h-full rounded-full`} style={{ width: `${percent}%` }}></div>
               </div>
-              {/* Percentage text removed as requested */}
+              
+              {/* Expandable Legend */}
+              {isExpanded && (
+                <div className="mt-4 pt-4 border-t border-slate-100 animate-fadeIn text-left">
+                  <p className="text-sm font-medium text-slate-600 leading-relaxed bg-slate-50 p-3 rounded-lg border border-slate-100">
+                    <span className="flex items-center gap-2 text-xs font-bold uppercase text-slate-400 mb-1">
+                      <Info className="w-3 h-3" /> Significado
+                    </span>
+                    {card.description}
+                  </p>
+                </div>
+              )}
             </div>
           );
         })}
