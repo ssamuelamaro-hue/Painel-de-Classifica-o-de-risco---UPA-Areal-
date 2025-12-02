@@ -178,8 +178,8 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
       Vermelho: item.vermelho,
       'Laranja (CRAI)': item.laranja,
       Amarelo: item.amarelo,
-      Azul: item.azul,
       Verde: item.verde,
+      Azul: item.azul,
       Total: item.total
     })));
     const wb = XLSX.utils.book_new();
@@ -307,11 +307,12 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
               <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4, 4, 0, 0]} maxBarSize={60}>
                 <LabelList dataKey="amarelo" position="top" fill="#ca8a04" fontSize={12} fontWeight="bold" />
               </Bar>
-              <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                <LabelList dataKey="azul" position="top" fill="#2563eb" fontSize={12} fontWeight="bold" />
-              </Bar>
+              {/* Order Changed: Green then Blue */}
               <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={60}>
                 <LabelList dataKey="verde" position="top" fill="#16a34a" fontSize={12} fontWeight="bold" />
+              </Bar>
+              <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60}>
+                <LabelList dataKey="azul" position="top" fill="#2563eb" fontSize={12} fontWeight="bold" />
               </Bar>
             </BarChart>
           </ResponsiveContainer>
@@ -339,33 +340,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
 
         {[
           { 
-            key: 'amarelo', 
-            label: 'Amarelo', 
-            color: 'bg-yellow-500', 
-            text: 'text-yellow-600', 
-            bg: 'bg-yellow-50', 
-            bar: 'bg-yellow-500',
-            description: 'Urgente: Risco moderado e não imediato.' 
-          },
-          { 
-            key: 'azul', 
-            label: 'Azul', 
-            color: 'bg-blue-500', 
-            text: 'text-blue-600', 
-            bg: 'bg-blue-50', 
-            bar: 'bg-blue-500',
-            description: 'Não Urgente: Casos que não necessitam de atendimento imediato e podem esperar.'
-          },
-          { 
-            key: 'verde', 
-            label: 'Verde', 
-            color: 'bg-green-500', 
-            text: 'text-green-600', 
-            bg: 'bg-green-50', 
-            bar: 'bg-green-500',
-            description: 'Pouco Urgente: Casos de baixa gravidade e com o paciente estável.'
-          },
-          { 
             key: 'vermelho', 
             label: 'Vermelho', 
             color: 'bg-red-500', 
@@ -382,6 +356,34 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
             bg: 'bg-orange-50', 
             bar: 'bg-orange-500',
             description: 'Laranja (Centro de Referência ao Infantojuvenil) atende crianças e adolescentes com até 18 anos de idade vítimas ou testemunhas de violência.'
+          },
+          { 
+            key: 'amarelo', 
+            label: 'Amarelo', 
+            color: 'bg-yellow-500', 
+            text: 'text-yellow-600', 
+            bg: 'bg-yellow-50', 
+            bar: 'bg-yellow-500',
+            description: 'Urgente: Risco moderado e não imediato.' 
+          },
+          // Order Changed: Green then Blue
+          { 
+            key: 'verde', 
+            label: 'Verde', 
+            color: 'bg-green-500', 
+            text: 'text-green-600', 
+            bg: 'bg-green-50', 
+            bar: 'bg-green-500',
+            description: 'Pouco Urgente: Casos de baixa gravidade e com o paciente estável.'
+          },
+          { 
+            key: 'azul', 
+            label: 'Azul', 
+            color: 'bg-blue-500', 
+            text: 'text-blue-600', 
+            bg: 'bg-blue-50', 
+            bar: 'bg-blue-500',
+            description: 'Não Urgente: Casos que não necessitam de atendimento imediato e podem esperar.'
           },
         ].map((card) => {
           const value = lastDay ? (lastDay as any)[card.key] : 0;
@@ -494,13 +496,13 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
              <p className="text-xs text-slate-400 mt-1">pacientes no mês</p>
            </div>
            
-           {/* Color Cards */}
+           {/* Color Cards - Order Changed: Green then Blue */}
            {[
              { label: 'Vermelho', value: monthlyTotals.vermelho, color: 'text-red-400', border: 'border-red-500/30' },
              { label: 'Laranja', value: monthlyTotals.laranja, color: 'text-orange-400', border: 'border-orange-500/30' },
              { label: 'Amarelo', value: monthlyTotals.amarelo, color: 'text-yellow-400', border: 'border-yellow-500/30' },
-             { label: 'Azul', value: monthlyTotals.azul, color: 'text-blue-400', border: 'border-blue-500/30' },
              { label: 'Verde', value: monthlyTotals.verde, color: 'text-green-400', border: 'border-green-500/30' },
+             { label: 'Azul', value: monthlyTotals.azul, color: 'text-blue-400', border: 'border-blue-500/30' },
            ].map((item, idx) => (
              <div key={idx} className={`bg-white/5 backdrop-blur-sm rounded-xl p-4 border ${item.border} flex flex-col justify-center items-center text-center hover:bg-white/10 transition-colors`}>
                 <span className={`text-2xl font-bold ${item.color}`}>{item.value}</span>
@@ -530,8 +532,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                 <th className="px-6 py-4 text-red-600">Vermelho</th>
                 <th className="px-6 py-4 text-orange-600">Laranja (CRAI)</th>
                 <th className="px-6 py-4 text-yellow-600">Amarelo</th>
-                <th className="px-6 py-4 text-blue-600">Azul</th>
+                {/* Order Changed: Green then Blue */}
                 <th className="px-6 py-4 text-green-600">Verde</th>
+                <th className="px-6 py-4 text-blue-600">Azul</th>
                 <th className="px-6 py-4">Total</th>
                 <th className="px-6 py-4 text-center">Ações</th>
               </tr>
@@ -543,8 +546,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                   <td className="px-6 py-4 font-bold text-red-600 bg-red-50/50">{item.vermelho}</td>
                   <td className="px-6 py-4 font-bold text-orange-600 bg-orange-50/50">{item.laranja}</td>
                   <td className="px-6 py-4 font-bold text-yellow-600 bg-yellow-50/50">{item.amarelo}</td>
-                  <td className="px-6 py-4 font-bold text-blue-600 bg-blue-50/50">{item.azul}</td>
+                  {/* Order Changed: Green then Blue */}
                   <td className="px-6 py-4 font-bold text-green-600 bg-green-50/50">{item.verde}</td>
+                  <td className="px-6 py-4 font-bold text-blue-600 bg-blue-50/50">{item.azul}</td>
                   <td className="px-6 py-4 font-bold text-slate-800">{item.total}</td>
                   <td className="px-6 py-4 text-center">
                     <button 
@@ -632,8 +636,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                  { label: 'Vermelho', key: 'vermelho', color: 'text-red-600' },
                  { label: 'Laranja (CRAI)', key: 'laranja', color: 'text-orange-600' },
                  { label: 'Amarelo', key: 'amarelo', color: 'text-yellow-600' },
-                 { label: 'Azul', key: 'azul', color: 'text-blue-600' },
+                 // Order Changed: Green then Blue
                  { label: 'Verde', key: 'verde', color: 'text-green-600' },
+                 { label: 'Azul', key: 'azul', color: 'text-blue-600' },
                ].map((field) => (
                  <div key={field.key}>
                    <label className={`block text-xs font-bold uppercase mb-1 ${field.color}`}>{field.label}</label>
@@ -789,8 +794,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                                 <Bar dataKey="vermelho" name="Vermelho" fill="#ef4444" radius={[4,4,0,0]} />
                                 <Bar dataKey="laranja" name="Laranja" fill="#f97316" radius={[4,4,0,0]} />
                                 <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4,4,0,0]} />
-                                <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4,4,0,0]} />
+                                {/* Order Changed: Green then Blue */}
                                 <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4,4,0,0]} />
+                                <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4,4,0,0]} />
                               </BarChart>
                             </ResponsiveContainer>
                          </div>
@@ -807,8 +813,9 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
                                 <div className="flex justify-between"><span className="text-red-600 font-medium">Vermelho</span> <span>{day.vermelho}</span></div>
                                 <div className="flex justify-between"><span className="text-orange-600 font-medium">Laranja</span> <span>{day.laranja}</span></div>
                                 <div className="flex justify-between"><span className="text-yellow-600 font-medium">Amarelo</span> <span>{day.amarelo}</span></div>
-                                <div className="flex justify-between"><span className="text-blue-600 font-medium">Azul</span> <span>{day.azul}</span></div>
+                                {/* Order Changed: Green then Blue */}
                                 <div className="flex justify-between"><span className="text-green-600 font-medium">Verde</span> <span>{day.verde}</span></div>
+                                <div className="flex justify-between"><span className="text-blue-600 font-medium">Azul</span> <span>{day.azul}</span></div>
                               </div>
                             </div>
                           ))}
