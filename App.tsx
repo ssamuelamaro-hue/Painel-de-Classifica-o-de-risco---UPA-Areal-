@@ -1,8 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import TriageDashboard from './components/TriageDashboard';
 import { TriageData } from './types';
-import { Activity, Sparkles } from 'lucide-react';
-import { getFastInsight } from './services/geminiService';
+import { Activity, PlusSquare } from 'lucide-react';
 import LZString from 'lz-string';
 
 // Mock Initial Data
@@ -64,8 +63,6 @@ const App: React.FC = () => {
     return initialData;
   });
 
-  const [insight, setInsight] = useState<string>("Carregando análise rápida...");
-
   // Sync URL with data changes using Compression
   useEffect(() => {
     try {
@@ -78,17 +75,6 @@ const App: React.FC = () => {
     } catch (e) {
       console.error("Erro ao atualizar URL:", e);
     }
-  }, [data]);
-
-  // Fast Insight Logic
-  useEffect(() => {
-    const fetchInsight = async () => {
-      // Summarize data for the prompt to save tokens/latency
-      const summary = data.slice(-3).map(d => `${d.dia}: Total ${d.total} (Vermelho ${d.vermelho})`).join('; ');
-      const result = await getFastInsight(summary);
-      setInsight(result);
-    };
-    fetchInsight();
   }, [data]);
 
   const handleAddData = (newData: TriageData) => {
@@ -104,38 +90,57 @@ const App: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900">
-      {/* Main Content Area */}
-      <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="bg-white h-24 md:h-24 border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 shadow-sm z-10">
-          <div className="flex items-center gap-5">
-            <div className="relative group">
-              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
-              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 p-3.5 rounded-xl border border-slate-700/50 shadow-xl">
-                <Activity className="w-7 h-7 text-blue-400" />
-              </div>
-            </div>
-            <div className="flex flex-col items-start">
-              {/* Highlighted Title Container */}
-              <div className="bg-gradient-to-r from-blue-50 via-indigo-50 to-slate-50 px-5 py-2 rounded-xl border border-blue-100/80 shadow-[0_2px_8px_rgba(59,130,246,0.05)] inline-flex items-center mb-1">
-                <h1 className="text-2xl font-black text-slate-800 tracking-tighter leading-none">
-                  UPA<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">-Areal</span>
-                </h1>
-              </div>
-              <span className="text-[10px] font-bold text-slate-400 tracking-[0.2em] uppercase ml-1 pl-3 border-l-2 border-blue-200">
-                Acolhimento c/ Classificação de Risco
-              </span>
-            </div>
-          </div>
-          
-          <div className="hidden md:flex items-center gap-4 text-sm text-slate-500 bg-slate-50 px-4 py-2 rounded-full border border-slate-100 shadow-sm">
-             <Sparkles className="w-4 h-4 text-yellow-500" />
-             <span className="italic truncate max-w-md">"{insight}"</span>
-          </div>
-        </header>
+    <div className="min-h-screen bg-slate-50 flex flex-col font-sans text-slate-900">
+      
+      {/* HEADER BANNER - Full Width & Centered */}
+      <header className="relative bg-slate-900 border-b border-slate-800 shadow-xl overflow-hidden flex-shrink-0 z-20">
+        
+        {/* Creative Background Elements */}
+        <div className="absolute inset-0 w-full h-full">
+           {/* Dark Gradient Base */}
+           <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-slate-800 via-slate-900 to-black"></div>
+           
+           {/* Tech Grid Pattern */}
+           <div className="absolute inset-0 bg-[linear-gradient(rgba(255,255,255,0.03)_1px,transparent_1px),linear-gradient(90deg,rgba(255,255,255,0.03)_1px,transparent_1px)] bg-[size:40px_40px] opacity-20"></div>
 
-        <main className="flex-1 overflow-y-auto p-6">
+           {/* Glowing Orbs */}
+           <div className="absolute top-0 left-0 w-[500px] h-[500px] bg-blue-600/20 rounded-full blur-[120px] -translate-x-1/2 -translate-y-1/2 mix-blend-screen"></div>
+           <div className="absolute bottom-0 right-0 w-[500px] h-[500px] bg-cyan-500/10 rounded-full blur-[100px] translate-x-1/3 translate-y-1/3 mix-blend-screen"></div>
+        </div>
+
+        {/* Central Content */}
+        <div className="relative z-10 container mx-auto px-6 py-8 md:py-10 flex flex-col items-center justify-center text-center">
+           
+           {/* Logo Container with Glow */}
+           <div className="mb-4 relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-500 to-cyan-400 rounded-2xl blur opacity-30 group-hover:opacity-60 transition duration-500"></div>
+              <div className="relative bg-slate-900/80 backdrop-blur-xl p-4 rounded-2xl border border-slate-700/50 shadow-2xl">
+                 <Activity className="w-10 h-10 md:w-12 md:h-12 text-blue-400" />
+              </div>
+           </div>
+
+           {/* Typography */}
+           <h1 className="text-4xl md:text-5xl lg:text-6xl font-black text-white tracking-tighter leading-none mb-3 drop-shadow-lg">
+             UPA <span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-400 via-cyan-300 to-blue-400 animate-pulse">AREAL</span>
+           </h1>
+           
+           {/* Decorative Subtitle Line */}
+           <div className="flex items-center gap-4 opacity-80">
+              <div className="h-[2px] w-8 md:w-24 bg-gradient-to-r from-transparent to-blue-500"></div>
+              <span className="text-[10px] md:text-xs font-bold text-blue-100 tracking-[0.3em] uppercase drop-shadow-md">
+                Acolhimento & Classificação de Risco
+              </span>
+              <div className="h-[2px] w-8 md:w-24 bg-gradient-to-l from-transparent to-blue-500"></div>
+           </div>
+
+        </div>
+      </header>
+
+      {/* Main Content Area */}
+      <div className="flex-1 flex flex-col overflow-hidden relative z-10">
+        <main className="flex-1 overflow-y-auto p-6 bg-slate-50">
           <div className="max-w-7xl mx-auto flex flex-col min-h-full">
+            
             {/* Dashboard - Full Width */}
             <div className="flex-1 min-h-0">
               <TriageDashboard 
