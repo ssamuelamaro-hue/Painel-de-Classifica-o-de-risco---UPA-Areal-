@@ -287,7 +287,14 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-lg relative overflow-hidden transition-all hover:scale-[1.02]">
           <div className="relative z-10">
-            <h3 className="text-blue-100 text-sm font-bold uppercase tracking-wider mb-1">Total do Dia</h3>
+            <div className="flex justify-between items-start mb-2">
+              <h3 className="text-blue-100 text-sm font-bold uppercase tracking-wider">Total do Dia</h3>
+              {lastDay && (
+                <span className="bg-white/20 border border-white/10 backdrop-blur-md text-white text-[10px] font-bold px-2 py-1 rounded-lg shadow-sm">
+                  {formatBrDate(lastDay.dia)}
+                </span>
+              )}
+            </div>
             <div className="flex items-baseline gap-2">
               <span className="text-5xl font-extrabold tracking-tight">{lastDay?.total || 0}</span>
               <span className="text-sm text-blue-200 font-medium">pacientes</span>
@@ -295,7 +302,7 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
             <div className="mt-4 w-full bg-black/20 h-2 rounded-full overflow-hidden backdrop-blur-sm">
               <div className="bg-white/90 h-full rounded-full shadow-[0_0_10px_rgba(255,255,255,0.5)]" style={{ width: '100%' }}></div>
             </div>
-            <p className="text-xs text-blue-200 mt-2 font-medium">Atendimentos hoje</p>
+            <p className="text-xs text-blue-200 mt-2 font-medium">Atendimentos registrados</p>
           </div>
           <div className="absolute right-[-10px] bottom-[-10px] opacity-10 pointer-events-none rotate-12">
             <Users className="w-40 h-40 text-white" />
