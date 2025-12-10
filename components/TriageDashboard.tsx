@@ -283,42 +283,6 @@ const TriageDashboard: React.FC<TriageDashboardProps> = ({ data, onAddData, onDe
         </div>
       </div>
 
-      {/* 2. Main Chart (Priority 1) */}
-      <div className="bg-white p-6 rounded-2xl shadow-sm border border-slate-200">
-        <div className="flex justify-between items-center mb-6">
-          <h2 className="text-lg font-bold text-slate-800">Evolução Diária por Classificação de Risco</h2>
-          {lastDay && <span className="text-sm font-medium text-slate-500 bg-slate-100 px-3 py-1 rounded-full">{formatBrDate(lastDay.dia)}</span>}
-        </div>
-        <div className="h-80 w-full">
-          <ResponsiveContainer width="100%" height="100%">
-            <BarChart data={lastDay ? [lastDay] : []} margin={{ top: 20, right: 30, left: 20, bottom: 5 }}>
-              <CartesianGrid strokeDasharray="3 3" vertical={false} stroke="#f1f5f9" />
-              <XAxis dataKey="dia" hide />
-              <YAxis axisLine={false} tickLine={false} tick={{ fontSize: 12, fill: '#94a3b8' }} />
-              <Tooltip cursor={{ fill: '#f8fafc' }} content={<CustomTooltip />} />
-              <Legend />
-              
-              <Bar dataKey="vermelho" name="Vermelho" fill="#ef4444" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                <LabelList dataKey="vermelho" position="top" fill="#ef4444" fontSize={12} fontWeight="bold" />
-              </Bar>
-              <Bar dataKey="laranja" name="Laranja (CRAI)" fill="#f97316" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                <LabelList dataKey="laranja" position="top" fill="#f97316" fontSize={12} fontWeight="bold" />
-              </Bar>
-              <Bar dataKey="amarelo" name="Amarelo" fill="#eab308" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                <LabelList dataKey="amarelo" position="top" fill="#ca8a04" fontSize={12} fontWeight="bold" />
-              </Bar>
-              {/* Order Changed: Green then Blue */}
-              <Bar dataKey="verde" name="Verde" fill="#22c55e" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                <LabelList dataKey="verde" position="top" fill="#16a34a" fontSize={12} fontWeight="bold" />
-              </Bar>
-              <Bar dataKey="azul" name="Azul" fill="#3b82f6" radius={[4, 4, 0, 0]} maxBarSize={60}>
-                <LabelList dataKey="azul" position="top" fill="#2563eb" fontSize={12} fontWeight="bold" />
-              </Bar>
-            </BarChart>
-          </ResponsiveContainer>
-        </div>
-      </div>
-
       {/* 3. Daily Panel (KPIs) (Priority 2) */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
         <div className="bg-gradient-to-br from-blue-600 to-indigo-700 rounded-xl p-6 text-white shadow-lg relative overflow-hidden transition-all hover:scale-[1.02]">

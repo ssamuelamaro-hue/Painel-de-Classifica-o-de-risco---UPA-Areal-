@@ -107,13 +107,24 @@ const App: React.FC = () => {
     <div className="min-h-screen bg-slate-50 flex font-sans text-slate-900">
       {/* Main Content Area */}
       <div className="flex-1 flex flex-col h-screen overflow-hidden">
-        <header className="bg-white h-16 border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0">
-          <div className="flex items-center gap-3">
-            <div className="bg-blue-600 p-2 rounded-lg">
-              <Activity className="w-5 h-5 text-white" />
+        <header className="bg-white h-20 border-b border-slate-200 flex items-center justify-between px-6 flex-shrink-0 shadow-sm z-10">
+          <div className="flex items-center gap-4">
+            <div className="relative group">
+              <div className="absolute -inset-1 bg-gradient-to-r from-blue-600 to-indigo-600 rounded-xl blur opacity-25 group-hover:opacity-50 transition duration-200"></div>
+              <div className="relative bg-gradient-to-br from-slate-900 to-slate-800 p-3 rounded-xl border border-slate-700/50 shadow-xl">
+                <Activity className="w-6 h-6 text-blue-400" />
+              </div>
             </div>
-            <h1 className="text-xl font-bold text-slate-800 tracking-tight">Acolhimento com Classificação de Risco</h1>
+            <div className="flex flex-col">
+              <h1 className="text-2xl font-black text-slate-800 tracking-tighter leading-none">
+                UPA<span className="text-transparent bg-clip-text bg-gradient-to-r from-blue-600 to-indigo-600">-Areal</span>
+              </h1>
+              <span className="text-xs font-bold text-slate-500 tracking-[0.15em] uppercase mt-1 bg-slate-100 px-2 py-0.5 rounded-sm inline-block self-start">
+                Acolhimento c/ Classificação de Risco
+              </span>
+            </div>
           </div>
+          
           <div className="hidden md:flex items-center gap-4 text-sm text-slate-500 bg-slate-50 px-4 py-2 rounded-full border border-slate-100">
              <Sparkles className="w-4 h-4 text-yellow-500" />
              <span className="italic truncate max-w-md">"{insight}"</span>
