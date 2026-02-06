@@ -1,14 +1,16 @@
+
 import { GoogleGenAI, Type } from "@google/genai";
 import { AIModelType } from "../types";
 
-const apiKey = process.env.API_KEY || '';
-const ai = new GoogleGenAI({ apiKey });
-
-// Helper to get the right model instance
-const getModel = (modelName: string) => ai.models;
+/**
+ * Helper to initialize a new GoogleGenAI instance for each request.
+ * This ensures we always use the latest API key if it's updated via the UI (mandatory for Pro models).
+ */
+const getAI = () => new GoogleGenAI({ apiKey: process.env.API_KEY });
 
 export const analyzeImageForTriage = async (base64Image: string, mimeType: string): Promise<string> => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: AIModelType.PRO_THINKING, // Use Pro for complex analysis
       contents: {
@@ -38,6 +40,7 @@ export const analyzeImageForTriage = async (base64Image: string, mimeType: strin
         responseMimeType: "application/json",
       }
     });
+    // Correctly accessing the text property instead of a method
     return response.text || "{}";
   } catch (error) {
     console.error("Error analyzing image:", error);
@@ -47,6 +50,7 @@ export const analyzeImageForTriage = async (base64Image: string, mimeType: strin
 
 export const generateImagePro = async (prompt: string, size: "1K" | "2K" | "4K") => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: AIModelType.IMAGE_GEN_PRO,
       contents: {
@@ -60,7 +64,7 @@ export const generateImagePro = async (prompt: string, size: "1K" | "2K" | "4K")
       }
     });
     
-    // Extract image from response parts
+    // Iterate through all parts to find the image part (inlineData)
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
@@ -75,6 +79,7 @@ export const generateImagePro = async (prompt: string, size: "1K" | "2K" | "4K")
 
 export const editImageFlash = async (base64Image: string, mimeType: string, prompt: string) => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: AIModelType.IMAGE_EDIT_FLASH,
       contents: {
@@ -90,6 +95,7 @@ export const editImageFlash = async (base64Image: string, mimeType: string, prom
       },
     });
 
+    // Iterate through all parts to find the image part
     for (const part of response.candidates?.[0]?.content?.parts || []) {
       if (part.inlineData) {
         return `data:image/png;base64,${part.inlineData.data}`;
@@ -109,6 +115,7 @@ export const chatWithGemini = async (
   history: { role: string, parts: { text: string }[] }[]
 ) => {
   try {
+    const ai = getAI();
     const modelName = useThinking ? AIModelType.PRO_THINKING : AIModelType.FAST;
     
     const config: any = {};
@@ -118,7 +125,8 @@ export const chatWithGemini = async (
     }
 
     if (useThinking) {
-      config.thinkingConfig = { thinkingBudget: 32768 }; // Max for Pro
+      // Configure thinking budget for Gemini 3 Pro
+      config.thinkingConfig = { thinkingBudget: 32768 };
     }
 
     const chat = ai.chats.create({
@@ -132,6 +140,7 @@ export const chatWithGemini = async (
     const text = result.text;
     const groundingChunks = result.candidates?.[0]?.groundingMetadata?.groundingChunks;
     
+    // Extract sources if grounding is available (required for search grounding)
     const sources = groundingChunks?.map((chunk: any) => ({
         uri: chunk.web?.uri || chunk.maps?.uri || '',
         title: chunk.web?.title || chunk.maps?.title || 'Source'
@@ -147,6 +156,7 @@ export const chatWithGemini = async (
 
 export const getFastInsight = async (dataContext: string) => {
   try {
+    const ai = getAI();
     const response = await ai.models.generateContent({
       model: AIModelType.FAST_LITE, // Use Lite for speed
       contents: `Com base nestes dados de triagem hospitalar: ${dataContext}. Dê um resumo executivo de uma frase sobre a carga de trabalho atual.`,

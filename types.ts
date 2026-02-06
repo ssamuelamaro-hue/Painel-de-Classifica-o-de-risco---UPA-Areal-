@@ -1,3 +1,4 @@
+
 export interface TriageData {
   id: string;
   dia: string;
@@ -10,8 +11,8 @@ export interface TriageData {
 }
 
 export enum AIModelType {
-  FAST = 'gemini-2.5-flash',
-  FAST_LITE = 'gemini-2.5-flash-lite',
+  FAST = 'gemini-3-flash-preview',
+  FAST_LITE = 'gemini-flash-lite-latest',
   PRO_THINKING = 'gemini-3-pro-preview',
   IMAGE_GEN_PRO = 'gemini-3-pro-image-preview',
   IMAGE_EDIT_FLASH = 'gemini-2.5-flash-image',

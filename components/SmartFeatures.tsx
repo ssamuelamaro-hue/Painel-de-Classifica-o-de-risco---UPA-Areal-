@@ -1,5 +1,6 @@
-import React, { useState, useRef } from 'react';
-import { Camera, MessageSquare, Sparkles, Image as ImageIcon, Search, BrainCircuit, Send, Loader2, Wand2 } from 'lucide-react';
+
+import React, { useState, useRef, useEffect } from 'react';
+import { Camera, MessageSquare, Sparkles, Image as ImageIcon, Search, BrainCircuit, Send, Loader2, Wand2, Key } from 'lucide-react';
 import { analyzeImageForTriage, chatWithGemini, editImageFlash, generateImagePro } from '../services/geminiService';
 import { ChatMessage, TriageData } from '../types';
 
@@ -59,7 +60,7 @@ const ChatInterface = () => {
     messagesEndRef.current?.scrollIntoView({ behavior: "smooth" });
   };
 
-  React.useEffect(() => {
+  useEffect(() => {
     scrollToBottom();
   }, [messages]);
 
@@ -244,16 +245,46 @@ const CreativeStudio = () => {
   const [loading, setLoading] = useState(false);
   const [editBaseImage, setEditBaseImage] = useState<string | null>(null);
   const editFileRef = useRef<HTMLInputElement>(null);
+  const [hasApiKey, setHasApiKey] = useState(true);
+
+  useEffect(() => {
+    // Check for selected API key (mandatory for Pro image models)
+    const checkKey = async () => {
+      if (window.aistudio?.hasSelectedApiKey) {
+        const selected = await window.aistudio.hasSelectedApiKey();
+        setHasApiKey(selected);
+      }
+    };
+    checkKey();
+  }, []);
+
+  const handleOpenKeySelector = async () => {
+    if (window.aistudio?.openSelectKey) {
+      await window.aistudio.openSelectKey();
+      // Assume success as per guidelines to avoid race conditions
+      setHasApiKey(true);
+    }
+  };
 
   const handleGenerate = async () => {
     if (!prompt) return;
+
+    // Trigger key selection if not already done (Mandatory for gemini-3-pro-image-preview)
+    if (!hasApiKey && window.aistudio) {
+      await handleOpenKeySelector();
+    }
+
     setLoading(true);
     setResultImage(null);
     try {
       const img = await generateImagePro(prompt, imageSize);
       setResultImage(img);
-    } catch (e) {
-      alert("Erro ao gerar imagem");
+    } catch (e: any) {
+      // If project not found or billing issues, reset key state
+      if (e.message?.includes("Requested entity was not found")) {
+        setHasApiKey(false);
+      }
+      alert("Erro ao gerar imagem. Certifique-se de usar uma API key vinculada a um projeto com faturamento ativo.");
     } finally {
       setLoading(false);
     }
@@ -273,7 +304,6 @@ const CreativeStudio = () => {
     setLoading(true);
     try {
       const base64 = editBaseImage.split(',')[1];
-      // Using simple jpeg mime for simplicity, ideally detect from file
       const img = await editImageFlash(base64, 'image/jpeg', prompt);
       setResultImage(img);
     } catch (e) {
@@ -292,6 +322,24 @@ const CreativeStudio = () => {
       
       <div className="flex-1 p-4 overflow-y-auto">
         <div className="space-y-4">
+          {!hasApiKey && mode === 'generate' && (
+            <div className="bg-amber-50 border border-amber-200 p-4 rounded-lg text-amber-900 text-sm mb-4">
+              <p className="font-bold mb-2 flex items-center gap-2">
+                <Key className="w-4 h-4 text-amber-700" /> API Key Necessária
+              </p>
+              <p className="text-xs mb-3">O modelo Pro requer faturamento ativo. Selecione uma chave vinculada a um projeto pago.</p>
+              <button 
+                onClick={handleOpenKeySelector}
+                className="bg-amber-600 text-white px-3 py-1.5 rounded text-xs font-bold hover:bg-amber-700 transition-colors"
+              >
+                Selecionar Chave
+              </button>
+              <a href="https://ai.google.dev/gemini-api/docs/billing" target="_blank" rel="noreferrer" className="block mt-2 text-[10px] text-amber-700 underline">
+                Documentação de Faturamento
+              </a>
+            </div>
+          )}
+
           {mode === 'generate' && (
             <div>
               <label className="block text-xs font-medium text-slate-700 mb-1">Tamanho da Imagem</label>
