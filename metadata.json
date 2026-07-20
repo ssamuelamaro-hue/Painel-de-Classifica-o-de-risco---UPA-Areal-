@@ -1,5 +1,8 @@
 {
-  "name": "Painel classificação de risco - UPA Areal ",
-  "description": "Painel inteligente de classificação de risco hospitalar com integração Gemini para análise, geração de imagens e insights avançados.",
-  "requestFramePermissions": []
+  "name": "Gestão Orçamentária de Saúde - Pelotas",
+  "description": "Painel interativo e inteligente para acompanhamento, simulação de cenários, exportação e análise com IA do Fundo Municipal de Saúde de Pelotas.",
+  "requestFramePermissions": [],
+  "majorCapabilities": [
+    "MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"
+  ]
 }
